@@ -8,7 +8,7 @@ Framework: FastAPI + Uvicorn
 """
 
 from fastapi import FastAPI, Request, BackgroundTasks
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import logging
@@ -16,18 +16,15 @@ import json
 import asyncio
 import re
 import os
-import glob as globmod
-import base64
-import sqlite3
-import time
-from fpdf import FPDF
-from gtts import gTTS
-import io
 import random
+from dotenv import load_dotenv
 
 # Configurações de log
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("whatsapp-ai-bridge")
+
+# Carrega variáveis do .env local (quando existir)
+load_dotenv()
 
 # Evolution API config - use environment variables
 EVOLUTION_BASE_URL = os.getenv("EVOLUTION_BASE_URL", "https://your-evolution-api.com")
@@ -82,6 +79,26 @@ async def health_check():
     }
 
 
+@app.get("/healthz")
+async def healthz():
+    """Readiness endpoint with minimal config validation."""
+    required = {
+        "EVOLUTION_BASE_URL": EVOLUTION_BASE_URL,
+        "EVOLUTION_API_KEY": EVOLUTION_API_KEY,
+        "LLM_API_URL": OPENAI_API_URL,
+        "LLM_API_KEY": OPENAI_API_KEY,
+        "LLM_MODEL_ID": MODEL_ID,
+    }
+    missing = [k for k, v in required.items() if not v or str(v).strip() == ""]
+    status = "ok" if not missing else "degraded"
+    return {
+        "status": status,
+        "missing": missing,
+        "service": "whatsapp-ai-bridge",
+        "model": MODEL_ID,
+    }
+
+
 @app.post("/evolution/webhook")
 async def evolution_webhook(request: Request, background_tasks: BackgroundTasks):
     """
@@ -90,19 +107,70 @@ async def evolution_webhook(request: Request, background_tasks: BackgroundTasks)
     """
     try:
         data = await request.json()
-        logger.info(f"Webhook received: {json.dumps(data, indent=2)}")
 
         # Normaliza o nome do evento (suporta -, _, case variations)
-        event = data.get("event", "").lower().replace("-", "").replace("_", "")
+        raw_event = data.get("event", "")
+        event = raw_event.lower().replace("-", "").replace("_", "")
 
-        if "messagesupsert" in event or "messages.upsert" in data.get("event", ""):
-            await handle_message(data)
+        if "messagesupsert" in event or "messages.upsert" in raw_event:
+            background_tasks.add_task(handle_message, data)
 
-        return {"status": "received"}, 200
+        return JSONResponse({"status": "received"}, status_code=200)
 
     except Exception as e:
         logger.error(f"Error processing webhook: {e}")
-        return {"status": "error", "message": str(e)}, 500
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
+async def call_llm(user_message: str) -> str:
+    """Chama o modelo configurado via endpoint OpenAI-compatible."""
+    if not OPENAI_API_KEY:
+        raise RuntimeError("LLM_API_KEY is missing")
+
+    thinking_enabled = str(THINKING_LEVEL).strip().lower() in {"true", "high", "1", "yes", "on"}
+
+    payload = {
+        "model": MODEL_ID,
+        "messages": [{"role": "user", "content": user_message}],
+        "max_tokens": 1024,
+        "temperature": 0.7,
+        "top_p": 1,
+        "stream": False,
+    }
+
+    if thinking_enabled:
+        payload["chat_template_kwargs"] = {"thinking": True}
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "Accept": "application/json",
+    }
+
+    async with httpx.AsyncClient(timeout=45) as client:
+        response = await client.post(OPENAI_API_URL, headers=headers, json=payload)
+        response.raise_for_status()
+        data = response.json()
+
+    choice = (data.get("choices") or [{}])[0]
+    message = choice.get("message") or {}
+    content = message.get("content")
+
+    if isinstance(content, str) and content.strip():
+        return content.strip()
+
+    if isinstance(content, list):
+        parts = [part.get("text", "") for part in content if isinstance(part, dict)]
+        joined = " ".join([p for p in parts if p]).strip()
+        if joined:
+            return joined
+
+    for fallback_key in ("reasoning_content", "output_text", "output"):
+        fallback = message.get(fallback_key) or choice.get(fallback_key) or data.get(fallback_key)
+        if isinstance(fallback, str) and fallback.strip():
+            return fallback.strip()
+
+    raise RuntimeError("LLM response without usable content")
 
 
 async def handle_message(data: dict):
@@ -110,11 +178,12 @@ async def handle_message(data: dict):
     try:
         message_data = data.get("data", {})
         key = message_data.get("key", {})
-        sender = key.get("remoteJid", "").split("@")[0]
+        remote_jid = key.get("remoteJid", "")
+        sender = remote_jid.split("@")[0]
         from_me = key.get("fromMe", False)
 
-        if from_me:
-            logger.info(f"Ignoring message from self: {sender}")
+        # Ignora mensagens próprias, grupos, status e broadcast
+        if from_me or remote_jid.endswith("@g.us") or "status@broadcast" in remote_jid or "broadcast" in remote_jid:
             return
 
         # Extrai texto da mensagem
@@ -123,21 +192,19 @@ async def handle_message(data: dict):
             message_content.get("conversation") or
             message_content.get("extendedTextMessage", {}).get("text") or
             ""
-        )
+        ).strip()
 
         if not sender or not text:
-            logger.warning("Missing sender or text")
             return
 
-        logger.info(f"Message from {sender}: {text}")
+        logger.info(f"Incoming message from {sender}")
 
-        # TODO: Implement complete flow:
-        # 1. Check blacklist
-        # 2. Detect intent
-        # 3. Load context/memory
-        # 4. Call LLM (Kimi 2.5)
-        # 5. Fragment response
-        # 6. Send via Evolution API
+        llm_reply = await call_llm(text)
+        if not llm_reply:
+            logger.warning("LLM returned empty reply")
+            return
+
+        await send_bubbles(sender, llm_reply)
 
     except Exception as e:
         logger.error(f"Error handling message: {e}")
