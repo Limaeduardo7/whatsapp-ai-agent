@@ -1,0 +1,25 @@
+{
+  "date": "2026-02-25",
+  "sources_snapshot": [
+    { "lead_source": "Google", "conversion_rate": 0.05 },
+    { "lead_source": "Social Media", "conversion_rate": 0.04 },
+    { "lead_source": "Email", "conversion_rate": 0.06 }
+  ],
+  "main_bottlenecks": [
+    {
+      "stage": "lead_to_response",
+      "priority": "high",
+      "note": "Perda no topo do funil por latência/abordagem inicial"
+    },
+    {
+      "stage": "proposal_to_closure",
+      "priority": "high",
+      "note": "Queda no fundo do funil por ausência de cadência de follow-up"
+    }
+  ],
+  "recommended_actions": [
+    "Definir SLA de primeira resposta < 5 min em horário comercial",
+    "Implementar sequência D+1/D+3/D+5 pós-proposta",
+    "Medir uplift por etapa em testes A/B"
+  ]
+}

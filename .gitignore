@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.venv/
+
+# Build output
+dist/
+build/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# Temp files
+tmp/
+tmp_*.py
+
+# Database
+*.db
+*.sqlite
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Agent internal
+.agent/
+.clawdhub/
+.clawhub/
+exec-approvals.json

@@ -1,0 +1,17 @@
+{
+  "dashboard_page_id": "30c68028-164c-81d1-8dc2-ea9411b5eb75",
+  "dashboard_url": "https://www.notion.so/30c68028164c81d18dc2ea9411b5eb75",
+  "created": true,
+  "parent_used": "30b68028-164c-8172-bfed-cff13e146e8d",
+  "archived_old_blocks": 0,
+  "new_blocks": 65,
+  "kpis": {
+    "total_leads": 72,
+    "open_leads": 72,
+    "hot": 16,
+    "overdue_followup": 0,
+    "pipeline_value": 600.0,
+    "forecast_value": 297.5,
+    "avg_ticket": 300.0
+  }
+}

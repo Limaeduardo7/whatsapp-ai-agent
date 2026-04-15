@@ -1,0 +1,108 @@
+:root {
+  --mk-bg: #0B0F1A;
+  --mk-bg-elev: #11192B;
+  --mk-card: #121C30;
+  --mk-primary: #7C5CFF;
+  --mk-primary-soft: #A58BFF;
+  --mk-accent: #24C7A8;
+  --mk-text: #F4F7FF;
+  --mk-text-soft: #B7C2DD;
+  --mk-border: #2B3856;
+  --mk-shadow: 0 14px 42px rgba(0, 0, 0, 0.42);
+
+  --mk-font-display: "Plus Jakarta Sans", "Inter", "Segoe UI", sans-serif;
+  --mk-font-body: "Inter", "Segoe UI", sans-serif;
+
+  --mk-h1: clamp(2rem, 3.4vw, 3rem);
+  --mk-h2: clamp(1.45rem, 2.4vw, 2rem);
+  --mk-h3: 1.18rem;
+  --mk-body: 1rem;
+  --mk-small: 0.92rem;
+
+  --mk-radius-lg: 20px;
+  --mk-radius-md: 14px;
+  --mk-spacing: 1rem;
+}
+
+.mk-theme-dark {
+  background: radial-gradient(1200px 500px at 85% -10%, rgba(124, 92, 255, 0.22), transparent 55%),
+              radial-gradient(700px 400px at -10% 100%, rgba(36, 199, 168, 0.16), transparent 60%),
+              var(--mk-bg);
+  color: var(--mk-text);
+  font-family: var(--mk-font-body);
+}
+
+.mk-proposal {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: calc(var(--mk-spacing) * 2.5);
+}
+
+.mk-panel {
+  background: linear-gradient(160deg, rgba(17, 25, 43, 0.92), rgba(18, 28, 48, 0.88));
+  border: 1px solid var(--mk-border);
+  border-radius: var(--mk-radius-lg);
+  box-shadow: var(--mk-shadow);
+  padding: calc(var(--mk-spacing) * 1.35);
+}
+
+.mk-title {
+  font-family: var(--mk-font-display);
+  font-size: var(--mk-h1);
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+  margin-bottom: 0.5rem;
+}
+
+.mk-subtitle {
+  color: var(--mk-text-soft);
+  font-size: var(--mk-body);
+  line-height: 1.6;
+}
+
+.mk-section-title {
+  font-family: var(--mk-font-display);
+  font-size: var(--mk-h2);
+  margin: 0 0 .8rem;
+}
+
+.mk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  border: 1px solid rgba(165, 139, 255, .45);
+  color: var(--mk-primary-soft);
+  border-radius: 999px;
+  padding: .35rem .75rem;
+  font-size: var(--mk-small);
+}
+
+.mk-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .75rem;
+}
+
+.mk-kpi {
+  background: rgba(124, 92, 255, .08);
+  border: 1px solid rgba(165, 139, 255, .3);
+  border-radius: var(--mk-radius-md);
+  padding: .85rem;
+}
+
+.mk-kpi strong {
+  display: block;
+  font-size: 1.15rem;
+  color: var(--mk-text);
+}
+
+.mk-kpi span { color: var(--mk-text-soft); font-size: .9rem; }
+
+.mk-list { margin: 0; padding-left: 1.2rem; color: var(--mk-text-soft); line-height: 1.65; }
+
+.mk-list li + li { margin-top: .38rem; }
+
+@media (max-width: 900px) {
+  .mk-kpi-grid { grid-template-columns: 1fr; }
+  .mk-proposal { padding: 1rem; }
+}

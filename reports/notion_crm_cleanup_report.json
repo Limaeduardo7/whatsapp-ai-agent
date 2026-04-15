@@ -1,0 +1,11 @@
+{
+  "database_url": "https://www.notion.so/8c1781b9a22e4b168ff4aa739b7eea05",
+  "backup_file": "/root/clawd/backups/notion_crm_pre_cleanup_20260218_235142.json",
+  "total_before": 72,
+  "total_after_first_page": 72,
+  "updated_rows": 72,
+  "duplicates_archived": 0,
+  "added_columns": [
+    "Tags"
+  ]
+}

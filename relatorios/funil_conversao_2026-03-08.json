@@ -1,0 +1,74 @@
+{
+  "window_start": "2026-03-01T17:00:44.530582+00:00",
+  "window_end": "2026-03-08T17:00:44.530582+00:00",
+  "sample_leads": 8,
+  "counts": {
+    "lead_created": 0,
+    "first_message_sent": 8,
+    "first_reply_received": 5,
+    "qualified": 4,
+    "proposal_sent": 1,
+    "closed_won": 0
+  },
+  "step_conversions": [
+    {
+      "from": "lead_created",
+      "to": "first_message_sent",
+      "from_count": 0,
+      "to_count": 8,
+      "conversion": 0.0
+    },
+    {
+      "from": "first_message_sent",
+      "to": "first_reply_received",
+      "from_count": 8,
+      "to_count": 5,
+      "conversion": 0.625
+    },
+    {
+      "from": "first_reply_received",
+      "to": "qualified",
+      "from_count": 5,
+      "to_count": 4,
+      "conversion": 0.8
+    },
+    {
+      "from": "qualified",
+      "to": "proposal_sent",
+      "from_count": 4,
+      "to_count": 1,
+      "conversion": 0.25
+    },
+    {
+      "from": "proposal_sent",
+      "to": "closed_won",
+      "from_count": 1,
+      "to_count": 0,
+      "conversion": 0.0
+    }
+  ],
+  "ab_summary": {
+    "A": {
+      "counts": {
+        "lead_created": 0,
+        "first_message_sent": 4,
+        "first_reply_received": 3,
+        "qualified": 3,
+        "proposal_sent": 1,
+        "closed_won": 0
+      },
+      "lead_to_won": 0.0
+    },
+    "B": {
+      "counts": {
+        "lead_created": 0,
+        "first_message_sent": 4,
+        "first_reply_received": 2,
+        "qualified": 1,
+        "proposal_sent": 0,
+        "closed_won": 0
+      },
+      "lead_to_won": 0.0
+    }
+  }
+}

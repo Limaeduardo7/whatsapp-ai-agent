@@ -1,0 +1,88 @@
+{"lead_id": "5511910001001", "variant": "B"}
+{"ok": true, "lead_id": "5511910001001", "event": "lead_created"}
+{"ok": true, "lead_id": "5511910001001", "event": "first_message_sent"}
+{"lead_id": "5511910001002", "variant": "B"}
+{"ok": true, "lead_id": "5511910001002", "event": "lead_created"}
+{"ok": true, "lead_id": "5511910001002", "event": "first_message_sent"}
+{"lead_id": "5511910001003", "variant": "B"}
+{"ok": true, "lead_id": "5511910001003", "event": "lead_created"}
+{"ok": true, "lead_id": "5511910001003", "event": "first_message_sent"}
+{"lead_id": "5511910001004", "variant": "B"}
+{"ok": true, "lead_id": "5511910001004", "event": "lead_created"}
+{"ok": true, "lead_id": "5511910001004", "event": "first_message_sent"}
+{"lead_id": "5511910001005", "variant": "B"}
+{"ok": true, "lead_id": "5511910001005", "event": "lead_created"}
+{"ok": true, "lead_id": "5511910001005", "event": "first_message_sent"}
+{"lead_id": "5511910001006", "variant": "B"}
+{"ok": true, "lead_id": "5511910001006", "event": "lead_created"}
+{"ok": true, "lead_id": "5511910001006", "event": "first_message_sent"}
+{"lead_id": "5511910001007", "variant": "A"}
+{"ok": true, "lead_id": "5511910001007", "event": "lead_created"}
+{"ok": true, "lead_id": "5511910001007", "event": "first_message_sent"}
+{"lead_id": "5511910001008", "variant": "B"}
+{"ok": true, "lead_id": "5511910001008", "event": "lead_created"}
+{"ok": true, "lead_id": "5511910001008", "event": "first_message_sent"}
+{"lead_id": "5511910001009", "variant": "A"}
+{"ok": true, "lead_id": "5511910001009", "event": "lead_created"}
+{"ok": true, "lead_id": "5511910001009", "event": "first_message_sent"}
+{"lead_id": "5511910001010", "variant": "A"}
+{"ok": true, "lead_id": "5511910001010", "event": "lead_created"}
+{"ok": true, "lead_id": "5511910001010", "event": "first_message_sent"}
+{"lead_id": "5511910001011", "variant": "B"}
+{"ok": true, "lead_id": "5511910001011", "event": "lead_created"}
+{"ok": true, "lead_id": "5511910001011", "event": "first_message_sent"}
+{"lead_id": "5511910001012", "variant": "A"}
+{"ok": true, "lead_id": "5511910001012", "event": "lead_created"}
+{"ok": true, "lead_id": "5511910001012", "event": "first_message_sent"}
+{"lead_id": "5511910001013", "variant": "B"}
+{"ok": true, "lead_id": "5511910001013", "event": "lead_created"}
+{"ok": true, "lead_id": "5511910001013", "event": "first_message_sent"}
+{"lead_id": "5511910001014", "variant": "A"}
+{"ok": true, "lead_id": "5511910001014", "event": "lead_created"}
+{"ok": true, "lead_id": "5511910001014", "event": "first_message_sent"}
+{"lead_id": "5511910001015", "variant": "A"}
+{"ok": true, "lead_id": "5511910001015", "event": "lead_created"}
+{"ok": true, "lead_id": "5511910001015", "event": "first_message_sent"}
+{"lead_id": "5511910001016", "variant": "B"}
+{"ok": true, "lead_id": "5511910001016", "event": "lead_created"}
+{"ok": true, "lead_id": "5511910001016", "event": "first_message_sent"}
+{"lead_id": "5511910001017", "variant": "A"}
+{"ok": true, "lead_id": "5511910001017", "event": "lead_created"}
+{"ok": true, "lead_id": "5511910001017", "event": "first_message_sent"}
+{"lead_id": "5511910001018", "variant": "B"}
+{"ok": true, "lead_id": "5511910001018", "event": "lead_created"}
+{"ok": true, "lead_id": "5511910001018", "event": "first_message_sent"}
+{"lead_id": "5511910001019", "variant": "A"}
+{"ok": true, "lead_id": "5511910001019", "event": "lead_created"}
+{"ok": true, "lead_id": "5511910001019", "event": "first_message_sent"}
+{"lead_id": "5511910001020", "variant": "A"}
+{"ok": true, "lead_id": "5511910001020", "event": "lead_created"}
+{"ok": true, "lead_id": "5511910001020", "event": "first_message_sent"}
+{"ok": true, "lead_id": "5511910001001", "event": "first_reply_received"}
+{"ok": true, "lead_id": "5511910001002", "event": "first_reply_received"}
+{"ok": true, "lead_id": "5511910001003", "event": "first_reply_received"}
+{"ok": true, "lead_id": "5511910001004", "event": "first_reply_received"}
+{"ok": true, "lead_id": "5511910001005", "event": "first_reply_received"}
+{"ok": true, "lead_id": "5511910001006", "event": "first_reply_received"}
+{"ok": true, "lead_id": "5511910001007", "event": "first_reply_received"}
+{"ok": true, "lead_id": "5511910001008", "event": "first_reply_received"}
+{"ok": true, "lead_id": "5511910001009", "event": "first_reply_received"}
+{"ok": true, "lead_id": "5511910001010", "event": "first_reply_received"}
+{"ok": true, "lead_id": "5511910001011", "event": "first_reply_received"}
+{"ok": true, "lead_id": "5511910001012", "event": "first_reply_received"}
+{"ok": true, "lead_id": "5511910001001", "event": "qualified"}
+{"ok": true, "lead_id": "5511910001002", "event": "qualified"}
+{"ok": true, "lead_id": "5511910001003", "event": "qualified"}
+{"ok": true, "lead_id": "5511910001004", "event": "qualified"}
+{"ok": true, "lead_id": "5511910001005", "event": "qualified"}
+{"ok": true, "lead_id": "5511910001006", "event": "qualified"}
+{"ok": true, "lead_id": "5511910001007", "event": "qualified"}
+{"ok": true, "lead_id": "5511910001008", "event": "qualified"}
+{"ok": true, "lead_id": "5511910001001", "event": "proposal_sent"}
+{"ok": true, "lead_id": "5511910001002", "event": "proposal_sent"}
+{"ok": true, "lead_id": "5511910001003", "event": "proposal_sent"}
+{"ok": true, "lead_id": "5511910001004", "event": "proposal_sent"}
+{"ok": true, "lead_id": "5511910001005", "event": "proposal_sent"}
+{"ok": true, "lead_id": "5511910001001", "event": "closed_won"}
+{"ok": true, "lead_id": "5511910001002", "event": "closed_won"}
+{"ok": true, "lead_id": "5511910001003", "event": "closed_won"}

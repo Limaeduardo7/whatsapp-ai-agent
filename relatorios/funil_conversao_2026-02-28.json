@@ -1,0 +1,56 @@
+{
+  "date": "2026-02-28",
+  "sample_size": 6,
+  "step_counts": {
+    "lead_created": 1,
+    "first_message_sent": 3,
+    "qualified": 4,
+    "proposal_sent": 2,
+    "closed_won": 1
+  },
+  "conversion_rates": {
+    "lead_created->first_message_sent": 3.0,
+    "first_message_sent->qualified": 1.3333333333333333,
+    "qualified->proposal_sent": 0.5,
+    "proposal_sent->closed_won": 0.5
+  },
+  "dropoff_rates": {
+    "lead_created->first_message_sent": -2.0,
+    "first_message_sent->qualified": -0.33333333333333326,
+    "qualified->proposal_sent": 0.5,
+    "proposal_sent->closed_won": 0.5
+  },
+  "top_bottlenecks": [
+    {
+      "step": "qualified->proposal_sent",
+      "dropoff_rate": 0.5
+    },
+    {
+      "step": "proposal_sent->closed_won",
+      "dropoff_rate": 0.5
+    },
+    {
+      "step": "first_message_sent->qualified",
+      "dropoff_rate": -0.33333333333333326
+    }
+  ],
+  "by_variant": {
+    "A": {
+      "leads": 2,
+      "qualified": 1,
+      "proposal_sent": 1,
+      "closed_won": 1,
+      "win_rate": 0.5
+    },
+    "B": {
+      "leads": 4,
+      "qualified": 3,
+      "proposal_sent": 1,
+      "closed_won": 0,
+      "win_rate": 0.0
+    }
+  },
+  "event_sources": {
+    "unknown": 11
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "generated_at": "2026-02-24T16:00:00-03:00",
+  "source_file": "/root/clawd/agent_worklog/leads_metrics.csv",
+  "sample_size": 10,
+  "totals": {
+    "leads": 3063,
+    "responses": 316,
+    "qualifications": 110,
+    "proposals": 57,
+    "closures": 14
+  },
+  "rates_step": {
+    "lead_to_response": 10.32,
+    "response_to_qualification": 34.81,
+    "qualification_to_proposal": 51.82,
+    "proposal_to_closure": 24.56
+  },
+  "rates_overall": {
+    "lead_to_qualification": 3.59,
+    "lead_to_proposal": 1.86,
+    "lead_to_closure": 0.46
+  },
+  "bottlenecks": [
+    {
+      "stage": "lead_to_response",
+      "lost_volume": 2747,
+      "loss_rate": 89.68,
+      "priority": "high"
+    },
+    {
+      "stage": "proposal_to_closure",
+      "loss_volume": 43,
+      "loss_rate": 75.44,
+      "priority": "high"
+    }
+  ],
+  "recommendations": [
+    "Aplicar SLA de 5 minutos no primeiro contato.",
+    "Executar cadência de follow-up D+1, D+3 e D+7 para propostas.",
+    "Registrar motivo de perda obrigatório por oportunidade.",
+    "Comparar scripts A/B semanalmente por etapa do funil."
+  ]
+}

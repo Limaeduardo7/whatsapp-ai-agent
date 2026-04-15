@@ -1,0 +1,82 @@
+{
+  "project": "Meraki Group",
+  "version": "1.2.0",
+  "updatedAt": "2026-02-25T09:00:00-03:00",
+  "colors": {
+    "brand": {
+      "900": "#0E1A2B",
+      "800": "#14243A",
+      "700": "#1C3250",
+      "600": "#234069",
+      "500": "#2A5084"
+    },
+    "accent": {
+      "gold": "#C9A227",
+      "goldSoft": "#E3C768",
+      "teal": "#0F8B8D"
+    },
+    "neutral": {
+      "0": "#FFFFFF",
+      "50": "#F7F9FC",
+      "100": "#EDF1F7",
+      "700": "#44546A",
+      "900": "#1A2230"
+    },
+    "semantic": {
+      "success": "#2E9B6F",
+      "warning": "#D59B2A",
+      "error": "#C64545"
+    }
+  },
+  "typography": {
+    "fontFamily": {
+      "display": "Playfair Display, serif",
+      "body": "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    },
+    "scale": {
+      "displayXl": { "size": "64px", "lineHeight": "72px", "weight": 700, "letterSpacing": "-0.02em" },
+      "displayLg": { "size": "52px", "lineHeight": "60px", "weight": 700, "letterSpacing": "-0.02em" },
+      "h1": { "size": "44px", "lineHeight": "52px", "weight": 700, "letterSpacing": "-0.015em" },
+      "h2": { "size": "34px", "lineHeight": "42px", "weight": 700, "letterSpacing": "-0.01em" },
+      "h3": { "size": "28px", "lineHeight": "36px", "weight": 650, "letterSpacing": "-0.005em" },
+      "h4": { "size": "22px", "lineHeight": "30px", "weight": 650, "letterSpacing": "0em" },
+      "bodyLg": { "size": "20px", "lineHeight": "32px", "weight": 400, "letterSpacing": "0em" },
+      "body": { "size": "18px", "lineHeight": "30px", "weight": 400, "letterSpacing": "0em" },
+      "small": { "size": "16px", "lineHeight": "26px", "weight": 400, "letterSpacing": "0.002em" },
+      "label": { "size": "14px", "lineHeight": "20px", "weight": 600, "letterSpacing": "0.015em" },
+      "caption": { "size": "12px", "lineHeight": "18px", "weight": 500, "letterSpacing": "0.02em" }
+    }
+  },
+  "spacing": {
+    "xs": "4px",
+    "sm": "8px",
+    "md": "16px",
+    "lg": "24px",
+    "xl": "32px",
+    "xxl": "48px",
+    "section": "96px"
+  },
+  "components": {
+    "buttonPrimary": {
+      "background": "#C9A227",
+      "text": "#0E1A2B",
+      "hover": "#E3C768",
+      "radius": "12px",
+      "padding": "14px 24px"
+    },
+    "buttonSecondary": {
+      "background": "transparent",
+      "text": "#FFFFFF",
+      "border": "1px solid #E3C768",
+      "hover": "rgba(227,199,104,0.12)",
+      "radius": "12px",
+      "padding": "14px 24px"
+    },
+    "card": {
+      "background": "#FFFFFF",
+      "border": "1px solid #EDF1F7",
+      "shadow": "0 8px 24px rgba(14,26,43,0.08)",
+      "radius": "16px"
+    }
+  }
+}

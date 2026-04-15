@@ -1,0 +1,469 @@
+{
+  "data_source": {
+    "object": "data_source",
+    "id": "434a45a3-9fd8-4bdd-993c-6752c91d9941",
+    "cover": null,
+    "icon": null,
+    "created_time": "2026-02-18T16:30:00.000Z",
+    "created_by": {
+      "object": "user",
+      "id": "1ac5f70f-ad9b-4793-aa5f-ecd6c1c642cf"
+    },
+    "last_edited_by": {
+      "object": "user",
+      "id": "1ac5f70f-ad9b-4793-aa5f-ecd6c1c642cf"
+    },
+    "last_edited_time": "2026-02-18T16:30:00.000Z",
+    "title": [
+      {
+        "type": "text",
+        "text": {
+          "content": "Pipeline de Vendas",
+          "link": null
+        },
+        "annotations": {
+          "bold": false,
+          "italic": false,
+          "strikethrough": false,
+          "underline": false,
+          "code": false,
+          "color": "default"
+        },
+        "plain_text": "Pipeline de Vendas",
+        "href": null
+      }
+    ],
+    "description": [
+      {
+        "type": "text",
+        "text": {
+          "content": "CRM de deals",
+          "link": null
+        },
+        "annotations": {
+          "bold": false,
+          "italic": false,
+          "strikethrough": false,
+          "underline": false,
+          "code": false,
+          "color": "default"
+        },
+        "plain_text": "CRM de deals",
+        "href": null
+      }
+    ],
+    "is_inline": false,
+    "properties": {
+      "Descrição Detalhada": {
+        "id": "%3B%60_%3C",
+        "name": "Descrição Detalhada",
+        "description": null,
+        "type": "rich_text",
+        "rich_text": {}
+      },
+      "Agente Responsável": {
+        "id": "Lc%7BK",
+        "name": "Agente Responsável",
+        "description": null,
+        "type": "select",
+        "select": {
+          "options": [
+            {
+              "id": "c32284df-78b3-45a6-859a-519c9c867006",
+              "name": "Crustáceo (CEO)",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "fc5708cb-0a68-4cec-868a-299c4cd89806",
+              "name": "Jarvis (Coordenador)",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "600326d1-de1c-4c70-9499-64c474214c02",
+              "name": "Estaleiro (Frontend)",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "f446781d-322c-4fce-bb2e-65b5fa120373",
+              "name": "Escrivão (Copywriting)",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "81cbaa4b-e2d3-4cb9-8e92-8a666b55fb7a",
+              "name": "Inspetor (QA)",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "4fefa3b0-def8-4ef5-8345-4127ad6e4e35",
+              "name": "Researcher (Dados)",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "d3b976c5-951f-49c1-8562-64360b269aab",
+              "name": "Designer (Gráfico)",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "7016c75b-3196-44f5-84b4-d6a17d6327f0",
+              "name": "Analyst (Métricas)",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "b3ae05a0-b596-4892-b48a-4e14e0813083",
+              "name": "Growth (Growth Hacking)",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "7e581cf7-c331-4f23-86ab-2b376d02ba33",
+              "name": "SEO (Orgânico)",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "723368a7-69c7-400f-b714-b33a72f88608",
+              "name": "Social (Redes)",
+              "color": "default",
+              "description": null
+            }
+          ]
+        }
+      },
+      "Etapa do Funil": {
+        "id": "OLyi",
+        "name": "Etapa do Funil",
+        "description": null,
+        "type": "select",
+        "select": {
+          "options": [
+            {
+              "id": "fed5db80-bf0d-44bc-a351-0c479a1ebb05",
+              "name": "Lead",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "d7fa56a1-4094-4c67-a46d-3567267b66db",
+              "name": "Qualificação",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "e9c1727f-c3c0-44c2-b389-4950cc108f62",
+              "name": "Proposta",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "f62fa898-4d01-4fe7-8e3d-af721f795100",
+              "name": "Negociação",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "582dba19-ab4b-4da7-8c51-8479512bec1b",
+              "name": "Ganho",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "638ddd59-ed1c-40ac-abdd-9f57a2c4a9f0",
+              "name": "Perdido",
+              "color": "default",
+              "description": null
+            }
+          ]
+        }
+      },
+      "Nível de Dificuldade": {
+        "id": "_%3C%5DP",
+        "name": "Nível de Dificuldade",
+        "description": null,
+        "type": "select",
+        "select": {
+          "options": [
+            {
+              "id": "a432a34d-fb0b-4b50-9da2-8a45f2facab2",
+              "name": "Baixa",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "a66bb40e-9a4a-4e69-8d8a-56c736db2f81",
+              "name": "Média",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "bbd0e8c0-f0e2-4f23-9f6a-27c21caf06f0",
+              "name": "Alta",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "4d9439bc-ec9c-44be-81c2-6efea9e4712b",
+              "name": "Crítica",
+              "color": "default",
+              "description": null
+            }
+          ]
+        }
+      },
+      "Data de Entrega": {
+        "id": "efc%5B",
+        "name": "Data de Entrega",
+        "description": null,
+        "type": "date",
+        "date": {}
+      },
+      "Status": {
+        "id": "f%3CP%5E",
+        "name": "Status",
+        "description": null,
+        "type": "select",
+        "select": {
+          "options": [
+            {
+              "id": "eec2320c-bffd-41af-b6c2-ad23e3e42a02",
+              "name": "Não iniciado",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "e52c8553-9d28-411f-b014-b5329623d73d",
+              "name": "Em andamento",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "afac093f-1521-443d-8b61-6169c90c3ed6",
+              "name": "Bloqueado",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "b2716017-6023-4e38-9106-8906d226d70c",
+              "name": "Concluído",
+              "color": "default",
+              "description": null
+            }
+          ]
+        }
+      },
+      "Prioridade": {
+        "id": "i_uF",
+        "name": "Prioridade",
+        "description": null,
+        "type": "select",
+        "select": {
+          "options": [
+            {
+              "id": "c32329c0-21e5-4ca9-8b5a-06e79bc05990",
+              "name": "Baixa",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "7a7158c6-3701-4f1a-b0a3-dc7e53b4b8fc",
+              "name": "Média",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "835fc267-7284-41c5-9a2e-a9b86dd7f04b",
+              "name": "Alta",
+              "color": "default",
+              "description": null
+            },
+            {
+              "id": "3c035ecb-6798-4b19-9b45-c5c01cbb1cc1",
+              "name": "Urgente",
+              "color": "default",
+              "description": null
+            }
+          ]
+        }
+      },
+      "Valor Estimado": {
+        "id": "xGzX",
+        "name": "Valor Estimado",
+        "description": null,
+        "type": "number",
+        "number": {
+          "format": "real"
+        }
+      },
+      "Data de Início": {
+        "id": "%7Ba%7D%7D",
+        "name": "Data de Início",
+        "description": null,
+        "type": "date",
+        "date": {}
+      },
+      "Deal": {
+        "id": "title",
+        "name": "Deal",
+        "description": null,
+        "type": "title",
+        "title": {}
+      }
+    },
+    "parent": {
+      "type": "database_id",
+      "database_id": "8c1781b9-a22e-4b16-8ff4-aa739b7eea05"
+    },
+    "database_parent": {
+      "type": "page_id",
+      "page_id": "30b68028-164c-815b-9ee2-d609bfa5bb0a"
+    },
+    "url": "https://www.notion.so/8c1781b9a22e4b168ff4aa739b7eea05",
+    "public_url": null,
+    "archived": false,
+    "in_trash": false,
+    "request_id": "3c7cee81-b803-405e-b578-5c57c51fc89b"
+  },
+  "pages": [
+    {
+      "object": "page",
+      "id": "30b68028-164c-819c-9787-c4f97f8fac65",
+      "created_time": "2026-02-18T16:30:00.000Z",
+      "last_edited_time": "2026-02-18T16:30:00.000Z",
+      "created_by": {
+        "object": "user",
+        "id": "1ac5f70f-ad9b-4793-aa5f-ecd6c1c642cf"
+      },
+      "last_edited_by": {
+        "object": "user",
+        "id": "1ac5f70f-ad9b-4793-aa5f-ecd6c1c642cf"
+      },
+      "cover": null,
+      "icon": null,
+      "parent": {
+        "type": "data_source_id",
+        "data_source_id": "434a45a3-9fd8-4bdd-993c-6752c91d9941",
+        "database_id": "8c1781b9-a22e-4b16-8ff4-aa739b7eea05"
+      },
+      "archived": false,
+      "in_trash": false,
+      "is_locked": false,
+      "properties": {
+        "Descrição Detalhada": {
+          "id": "%3B%60_%3C",
+          "type": "rich_text",
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Definir estrutura operacional do quadro Pipeline de Vendas, incluindo convenções de preenchimento, critérios de pronto, etiquetas e fluxo de status.",
+                "link": null
+              },
+              "annotations": {
+                "bold": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false,
+                "code": false,
+                "color": "default"
+              },
+              "plain_text": "Definir estrutura operacional do quadro Pipeline de Vendas, incluindo convenções de preenchimento, critérios de pronto, etiquetas e fluxo de status.",
+              "href": null
+            }
+          ]
+        },
+        "Agente Responsável": {
+          "id": "Lc%7BK",
+          "type": "select",
+          "select": {
+            "id": "c32284df-78b3-45a6-859a-519c9c867006",
+            "name": "Crustáceo (CEO)",
+            "color": "default"
+          }
+        },
+        "Etapa do Funil": {
+          "id": "OLyi",
+          "type": "select",
+          "select": null
+        },
+        "Nível de Dificuldade": {
+          "id": "_%3C%5DP",
+          "type": "select",
+          "select": {
+            "id": "a66bb40e-9a4a-4e69-8d8a-56c736db2f81",
+            "name": "Média",
+            "color": "default"
+          }
+        },
+        "Data de Entrega": {
+          "id": "efc%5B",
+          "type": "date",
+          "date": null
+        },
+        "Status": {
+          "id": "f%3CP%5E",
+          "type": "select",
+          "select": {
+            "id": "e52c8553-9d28-411f-b014-b5329623d73d",
+            "name": "Em andamento",
+            "color": "default"
+          }
+        },
+        "Prioridade": {
+          "id": "i_uF",
+          "type": "select",
+          "select": {
+            "id": "835fc267-7284-41c5-9a2e-a9b86dd7f04b",
+            "name": "Alta",
+            "color": "default"
+          }
+        },
+        "Valor Estimado": {
+          "id": "xGzX",
+          "type": "number",
+          "number": null
+        },
+        "Data de Início": {
+          "id": "%7Ba%7D%7D",
+          "type": "date",
+          "date": {
+            "start": "2026-02-18",
+            "end": null,
+            "time_zone": null
+          }
+        },
+        "Deal": {
+          "id": "title",
+          "type": "title",
+          "title": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Setup inicial do quadro",
+                "link": null
+              },
+              "annotations": {
+                "bold": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false,
+                "code": false,
+                "color": "default"
+              },
+              "plain_text": "Setup inicial do quadro",
+              "href": null
+            }
+          ]
+        }
+      },
+      "url": "https://www.notion.so/Setup-inicial-do-quadro-30b68028164c819c9787c4f97f8fac65",
+      "public_url": null
+    }
+  ]
+}

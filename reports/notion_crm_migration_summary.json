@@ -1,0 +1,12 @@
+{
+  "summary": {
+    "backup": "/root/clawd/backups/notion_pipeline_backup_20260218_233925.json",
+    "database_url": "https://www.notion.so/8c1781b9a22e4b168ff4aa739b7eea05",
+    "total_contacts_parsed": 72,
+    "archived_template_cards": 1,
+    "created": 72,
+    "updated": 0,
+    "errors": 0
+  },
+  "errors": []
+}

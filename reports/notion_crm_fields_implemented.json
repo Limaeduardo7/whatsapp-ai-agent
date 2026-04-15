@@ -1,0 +1,14 @@
+{
+  "database_url": "https://www.notion.so/8c1781b9a22e4b168ff4aa739b7eea05",
+  "columns_added": [
+    "Probabilidade de Fechamento (%)",
+    "Motivo de Perda",
+    "Origem da Campanha",
+    "Data de Fechamento Real",
+    "Dias sem Resposta",
+    "Valor Ponderado"
+  ],
+  "formula_fallback_number_columns": [],
+  "rows_total": 72,
+  "rows_updated": 72
+}

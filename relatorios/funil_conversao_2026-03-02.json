@@ -1,0 +1,81 @@
+{
+  "generated_at": "2026-03-02T16:00:39.590155-03:00",
+  "source_files": [
+    "/root/clawd/growth_scripts/ab_tests/data/funnel_events.csv",
+    "/root/clawd/growth_scripts/ab_tests/data/lead_assignments.csv"
+  ],
+  "sample": {
+    "unique_leads": 28,
+    "events": 84
+  },
+  "funnel_counts": {
+    "lead_created": 21,
+    "first_message_sent": 25,
+    "first_reply_received": 13,
+    "qualified": 13,
+    "proposal_sent": 8,
+    "closed_won": 4
+  },
+  "step_conversion_pct": {
+    "lead_created->first_message_sent": 119.05,
+    "first_message_sent->first_reply_received": 52.0,
+    "first_reply_received->qualified": 100.0,
+    "qualified->proposal_sent": 61.54,
+    "proposal_sent->closed_won": 50.0
+  },
+  "overall_conversion_pct": 19.05,
+  "top_dropoffs": [
+    {
+      "stage": "first_message_sent->first_reply_received",
+      "lost_leads": 12
+    },
+    {
+      "stage": "qualified->proposal_sent",
+      "lost_leads": 5
+    },
+    {
+      "stage": "proposal_sent->closed_won",
+      "lost_leads": 4
+    }
+  ],
+  "ab_variant_performance": {
+    "A": {
+      "leads": 12,
+      "counts": {
+        "lead_created": 10,
+        "first_message_sent": 11,
+        "first_reply_received": 5,
+        "qualified": 3,
+        "proposal_sent": 2,
+        "closed_won": 1
+      },
+      "step_conversion_pct": {
+        "lead_created->first_message_sent": 110.0,
+        "first_message_sent->first_reply_received": 45.45,
+        "first_reply_received->qualified": 60.0,
+        "qualified->proposal_sent": 66.67,
+        "proposal_sent->closed_won": 50.0
+      },
+      "overall_pct": 10.0
+    },
+    "B": {
+      "leads": 16,
+      "counts": {
+        "lead_created": 11,
+        "first_message_sent": 14,
+        "first_reply_received": 8,
+        "qualified": 10,
+        "proposal_sent": 6,
+        "closed_won": 3
+      },
+      "step_conversion_pct": {
+        "lead_created->first_message_sent": 127.27,
+        "first_message_sent->first_reply_received": 57.14,
+        "first_reply_received->qualified": 125.0,
+        "qualified->proposal_sent": 60.0,
+        "proposal_sent->closed_won": 50.0
+      },
+      "overall_pct": 27.27
+    }
+  }
+}

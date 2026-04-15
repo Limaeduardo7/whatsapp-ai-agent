@@ -1,0 +1,75 @@
+{
+  "agents": [
+    {
+      "id": "whatsapp",
+      "name": "WhatsApp Comercial",
+      "role": "VENDAS/ATENDIMENTO",
+      "icon": "MessageSquare",
+      "color": "emerald-400",
+      "shift": "08:00",
+      "model": "openai-codex/gpt-5.3-codex",
+      "enabled": true
+    },
+    {
+      "id": "jarvis",
+      "name": "Jarvis",
+      "role": "COORDENAÇÃO",
+      "icon": "Cpu",
+      "color": "neon-purple",
+      "shift": "07:00",
+      "model": "openai-codex/gpt-5.3-codex",
+      "enabled": true
+    },
+    {
+      "id": "researcher",
+      "name": "Researcher",
+      "role": "PESQUISADOR",
+      "icon": "Search",
+      "color": "neon-blue",
+      "shift": "07:30",
+      "model": "google-antigravity/gemini-3-flash",
+      "enabled": true
+    },
+    {
+      "id": "estaleiro",
+      "name": "Estaleiro",
+      "role": "FRONTEND",
+      "icon": "Layout",
+      "color": "neon-purple",
+      "shift": "09:00",
+      "model": "google-antigravity/claude-opus-4-5-thinking",
+      "enabled": true
+    },
+    {
+      "id": "escrivao",
+      "name": "Escrivão",
+      "role": "COPYWRITER",
+      "icon": "PenTool",
+      "color": "neon-blue",
+      "shift": "10:00",
+      "model": "google-antigravity/gemini-3-flash",
+      "enabled": true
+    },
+    {
+      "id": "seo",
+      "name": "SEO Expert",
+      "role": "OTIMIZAÇÃO",
+      "icon": "BarChart3",
+      "color": "neon-purple",
+      "shift": "11:00",
+      "model": "google-antigravity/gemini-3-flash",
+      "enabled": true
+    },
+    {
+      "id": "social",
+      "name": "Social Media",
+      "role": "ENGAJAMENTO",
+      "icon": "Users",
+      "color": "neon-blue",
+      "shift": "12:00",
+      "model": "google-antigravity/gemini-3-flash",
+      "enabled": true
+    }
+  ],
+  "tasks": []
+}

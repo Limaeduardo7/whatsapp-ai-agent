@@ -1,0 +1,13 @@
+[Unit]
+Description=Evolution API to OpenClaw Bridge
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/root/clawd
+ExecStart=/usr/bin/python3 -m uvicorn scripts.evo_auto_reply:app --host 0.0.0.0 --port 8001
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

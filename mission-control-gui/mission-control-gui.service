@@ -1,0 +1,15 @@
+[Unit]
+Description=Mission Control GUI
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/clawd/mission-control-gui
+ExecStartPre=/root/.nvm/versions/node/v22.22.0/bin/npm run build
+ExecStart=/root/.nvm/versions/node/v22.22.0/bin/npm run preview -- --host 0.0.0.0 --port 5173
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

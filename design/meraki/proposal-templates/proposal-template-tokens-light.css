@@ -1,0 +1,76 @@
+:root {
+  /* Light Theme Tokens — Meraki Proposal Templates */
+  --bg-primary: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-soft: #EEF2F7;
+
+  --text-primary: #0F172A;
+  --text-secondary: #334155;
+  --text-muted: #64748B;
+  --text-inverse: #FFFFFF;
+
+  --brand-primary: #1D4ED8;
+  --brand-primary-soft: #DBEAFE;
+  --brand-secondary: #0EA5E9;
+  --brand-accent: #7C3AED;
+
+  --success: #16A34A;
+  --warning: #D97706;
+  --danger: #DC2626;
+
+  --border-subtle: #E2E8F0;
+  --border-strong: #94A3B8;
+
+  --shadow-sm: 0 1px 2px rgba(2, 6, 23, 0.05);
+  --shadow-md: 0 6px 18px rgba(15, 23, 42, 0.08);
+
+  --font-display: "Playfair Display", "Georgia", serif;
+  --font-body: "Inter", "Segoe UI", sans-serif;
+
+  --fs-h1: clamp(2rem, 1.5rem + 2vw, 3rem);
+  --fs-h2: clamp(1.5rem, 1.2rem + 1.2vw, 2.2rem);
+  --fs-h3: 1.25rem;
+  --fs-body: 1rem;
+  --fs-small: 0.875rem;
+
+  --lh-tight: 1.15;
+  --lh-normal: 1.55;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+}
+
+.card {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-6);
+}
+
+.cta-primary {
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+  color: var(--text-inverse);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 12px 20px;
+  font-family: var(--font-body);
+  font-weight: 600;
+}
+
+.highlight {
+  background: var(--brand-primary-soft);
+  border-left: 4px solid var(--brand-primary);
+  padding: var(--space-4);
+  border-radius: var(--radius-sm);
+}

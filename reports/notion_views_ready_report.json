@@ -1,0 +1,20 @@
+{
+  "database_url": "https://www.notion.so/8c1781b9a22e4b168ff4aa739b7eea05",
+  "backup": "/root/clawd/backups/notion_crm_views_stage_20260219_000524.json",
+  "updated": 72,
+  "duplicates_archived": 0,
+  "columns_added": [
+    "Temperatura",
+    "Resultado",
+    "Follow-up Atrasado"
+  ],
+  "temperatura_counts": {
+    "Frio": 36,
+    "Morno": 20,
+    "Quente": 16
+  },
+  "resultado_counts": {
+    "Em aberto": 72
+  },
+  "followup_atrasado_true": 0
+}

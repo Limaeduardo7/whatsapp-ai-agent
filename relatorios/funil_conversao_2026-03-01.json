@@ -1,0 +1,38 @@
+{
+  "report_date": "2026-03-01",
+  "window": "last_7_days_from_latest_event",
+  "counts": {
+    "lead_created": 0,
+    "first_message_sent": 0,
+    "first_reply_received": 0,
+    "qualified": 0,
+    "proposal_sent": 0,
+    "closed_won": 0
+  },
+  "base_leads": 0,
+  "conversion_final_%": 0.0,
+  "step_conversion_%": {
+    "lead_created->first_message_sent": 0.0,
+    "first_message_sent->first_reply_received": 0.0,
+    "first_reply_received->qualified": 0.0,
+    "qualified->proposal_sent": 0.0,
+    "proposal_sent->closed_won": 0.0
+  },
+  "ab_summary": {
+    "A": {
+      "leads": 11,
+      "qualified": 0,
+      "proposal_sent": 0,
+      "closed_won": 0,
+      "win_rate_%": 0.0
+    },
+    "B": {
+      "leads": 15,
+      "qualified": 0,
+      "proposal_sent": 0,
+      "closed_won": 0,
+      "win_rate_%": 0.0
+    }
+  },
+  "generated_at": "2026-03-01T16:00:41.192095"
+}

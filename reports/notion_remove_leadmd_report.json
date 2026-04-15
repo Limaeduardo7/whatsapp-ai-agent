@@ -1,0 +1,18 @@
+{
+  "database_url": "https://www.notion.so/8c1781b9a22e4b168ff4aa739b7eea05",
+  "target_properties": [
+    "Arquivo Lead MD",
+    "Arquivo Lead Existe"
+  ],
+  "properties_found_initially": [
+    "Arquivo Lead MD",
+    "Arquivo Lead Existe"
+  ],
+  "rows_cleared": 72,
+  "properties_removed": [
+    "Arquivo Lead MD",
+    "Arquivo Lead Existe"
+  ],
+  "properties_still_present": [],
+  "remove_error": null
+}

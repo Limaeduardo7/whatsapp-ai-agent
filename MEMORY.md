@@ -1,0 +1,16 @@
+- **Não enviar mensagens de confirmação** sobre que outras mensagens foram enviadas para Eduardo. Esta instrução deve ser seguida para evitar confusões.
+- **Notion:** utilizar o Notion como hub principal de organização e acompanhamento; priorizar fluxos e registros por lá. Notion deve ficar ativo por padrão e só pode ser desativado com ordem explícita do Eduardo.
+- **Operação (19/02/2026):** não usar mais Feed separado; registrar tudo apenas no Notion.
+- **WhatsApp (leads):** nunca oferecer links de sites já feitos/portfólio anterior durante atendimento comercial.
+- **WhatsApp (leads):** não oferecer enviar exemplos de sites/lojas; conduzir discovery e próximo passo sem links de cases antigos.
+- **WhatsApp Comercial (operação):** deve gerenciar o Pipeline de Vendas no Notion como responsabilidade principal do turno.
+- **Autonomia de correção:** sempre que algum agente apresentar problema, corrigir imediatamente sem pedir permissão ao Eduardo.
+- **WhatsApp:** NÃO usamos o WhatsApp nativo do OpenClaw (Baileys). O canal WhatsApp é gerenciado exclusivamente pela **Evolution API** + **evolution-bridge.service**. Ignorar completamente o status do WhatsApp do OpenClaw.
+- **WhatsApp (agente):** se perguntarem de onde somos, responder que somos de Caxias do Sul, RS.
+- **WhatsApp (agente):** deve conseguir visualizar imagens e ouvir áudios (capacidade multimodal obrigatória no atendimento).
+- **WhatsApp (follow-up):** proibido enviar follow-up aleatório para leads; antes de qualquer mensagem, consultar sempre o histórico do lead no Notion.
+- **WhatsApp (bloqueio):** o agente não pode enviar mensagens de follow-up para leads que estejam na lista de bloqueio.
+- **WhatsApp (blacklist):** uma vez na blacklist, sempre na blacklist. Não retomar atendimento e não responder em nenhuma hipótese.
+- **WhatsApp (intervenção manual do Eduardo):** se o Eduardo intervir em uma conversa, o agente não pode responder nunca mais naquele chat (bloqueio permanente).
+- **WhatsApp (follow-up):** também é proibido enviar follow-up para grupos.
+- **Rotina da manhã (Notion/WhatsApp):** o Escrivão deve rodar antes do Comercial e preparar copys de follow-up por lead do pipeline no Notion; o Comercial usa essas copys e só fala com lead após checar histórico no Notion.
