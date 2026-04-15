@@ -1,8 +1,10 @@
 # 🚀 Deploy no GitHub
 
 ## Status
-✅ Projeto estruturado e commitado localmente
-❌ Aguardando push para GitHub (token expirado)
+✅ **DEPLOY CONCLUÍDO**
+- Repositório: https://github.com/Limaeduardo7/whatsapp-ai-agent
+- Branch: main
+- Visibilidade: Pública
 
 ## Opção 1: Completar via Script (Rápido)
 
