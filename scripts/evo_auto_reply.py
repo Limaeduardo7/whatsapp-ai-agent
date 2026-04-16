@@ -22,13 +22,13 @@ logger = logging.getLogger("kimi-whatsapp-bridge")
 
 # Evolution API config
 EVOLUTION_BASE_URL = "https://automacoes-evolution-api.hpfunv.easypanel.host"
-EVOLUTION_INSTANCE = "Eu"
+EVOLUTION_INSTANCE = "Meraki"
 EVOLUTION_API_KEY = "429683C4C977415CAAFCCE10F7D57E11"
 
 # OpenAI API (Codex)
 OPENAI_API_URL = os.getenv("LLM_API_URL", "http://localhost:18789/v1/chat/completions")
 OPENAI_API_KEY = os.getenv("LLM_API_KEY", "b3859b235be8827edeb8261ee8bb83b465407fe76372e960")
-MODEL_ID = os.getenv("LLM_MODEL_ID", "openai-codex/gpt-5.3-codex")
+MODEL_ID = os.getenv("LLM_MODEL_ID", "nvidia-kimi/moonshotai/kimi-k2.5")
 THINKING_LEVEL = "low"
 
 # Gemini STT/Vision
@@ -88,7 +88,31 @@ async def poll_messages_loop():
     logger.info("poll_messages_loop started")
     
     # Initialize with current timestamp to avoid processing old messages
-    _poll_last_ts[0] = int(time.time())
+    # Initialize by fetching the most recent message timestamp from API
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            init_resp = await client.post(
+                f"{EVOLUTION_BASE_URL}/chat/findMessages/{EVOLUTION_INSTANCE}",
+                headers=headers,
+                json={"where": {"key": {"fromMe": False}}, "limit": 1}
+            )
+            if init_resp.status_code == 200:
+                init_data = init_resp.json()
+                init_records = init_data.get("messages", {}).get("records", [])
+                if init_records:
+                    latest_ts = init_records[0].get("messageTimestamp", 0)
+                    if isinstance(latest_ts, dict):
+                        latest_ts = latest_ts.get("low", 0)
+                    latest_ts = int(latest_ts) if latest_ts else 0
+                    _poll_last_ts[0] = 0  # Process all messages (no time filter)  # Allow processing messages from last 24h
+                    logger.info(f"poll_last_ts initialized (allowing messages from last 24h): {latest_ts}")
+                else:
+                    _poll_last_ts[0] = int(time.time())
+            else:
+                _poll_last_ts[0] = int(time.time())
+    except Exception as e:
+        _poll_last_ts[0] = int(time.time())
+        logger.error(f"Error initializing poll timestamp: {e}")
     
     poll_interval = int(os.getenv("EVOLUTION_POLL_INTERVAL_SEC", "10"))
 
@@ -114,7 +138,7 @@ async def poll_messages_loop():
                         if isinstance(ts, dict):
                             ts = ts.get("low", 0)
                         ts = int(ts) if ts else 0
-                        if ts > _poll_last_ts[0]:
+                        if ts >= _poll_last_ts[0]:
                             new_msgs.append(rec)
                     
                     if new_msgs:
@@ -132,6 +156,11 @@ async def poll_messages_loop():
                             key = rec.get("key", {})
                             msg_id = key.get("id", "")
                             sender_jid = key.get("remoteJid", "")
+                            
+                            # Cache LID -> alt JID mapping
+                            _alt = key.get("remoteJidAlt", "")
+                            if _alt and sender_jid and sender_jid != _alt:
+                                _lid_to_alt[sender_jid] = _alt
                             
                             # Skip own messages (fromMe) — Evolution API ignores the filter
                             if key.get("fromMe", False):
@@ -237,6 +266,9 @@ notion_blacklist_cache = {}
 
 # Números protegidos — NUNCA podem ser bloqueados
 PROTECTED_NUMBERS = ["5554913917178", "5554991879262", "555491397178"]
+
+# Números liberados para o bot responder mesmo que o Eduardo já tenha respondido
+BOT_ALLOWED_NUMBERS = ["5554913917178", "5554991006375", "555491006375", "555491397178", "235450845388874"]
 
 
 def normalize_block_key(value: str) -> str:
@@ -692,27 +724,21 @@ load_data()
 # --- UTIL ---
 def normalize_evolution_target(target: str) -> str:
     """
-    Evolution send endpoints esperam número limpo (sem sufixo @...) ou o JID completo se for LID/Group.
-    Se for @s.whatsapp.net, remove o sufixo.
-    Se for @lid, mantém o sufixo (dependendo da versão da API, mas remover costuma quebrar envio para LIDs).
-    Para garantir, vamos tentar manter o sufixo se for @lid, ou remover se for @s.whatsapp.net.
-    
-    Update 2026-02-13: Logs mostram 400 Bad Request para alvos que parecem LIDs (ex: 242949187195101).
-    A Evolution API v2 geralmente precisa do JID completo se não for um número padrão.
-    Vamos ajustar para:
-    1. Se tiver @lid, mantém TUDO.
-    2. Se tiver @g.us (grupo), mantém TUDO.
-    3. Se tiver @s.whatsapp.net, remove o sufixo (comportamento padrão para números).
-    4. Se não tiver @, assume que é número limpo.
+    Normaliza JID para envio via Evolution API.
+    Converte @lid para número @s.whatsapp.net quando possível (evita "Aguardando mensagem").
     """
     t = (target or "").strip()
     if "@lid" in t:
-        return t # Mantém JID completo para LID
+        # Tentar converter LID para número real via cache
+        alt = _lid_to_alt.get(t, "")
+        if alt and "@s.whatsapp.net" in alt:
+            return alt.split("@")[0]  # Retorna número limpo
+        return t  # Fallback: mantém LID
     if "@g.us" in t:
-        return t # Mantém JID completo para Grupo
+        return t
     if "@s.whatsapp.net" in t:
-        return t.split("@")[0] # Remove sufixo para números normais
-    return t # Retorna como está (assumindo número limpo)
+        return t.split("@")[0]
+    return t
 
 
 def start_composing(target: str) -> asyncio.Event:
@@ -1338,7 +1364,7 @@ def analyze_sentiment(text: str) -> dict:
     return {"sentiment": sentiment, "score": score, "confused": is_confused}
 
 
-def compact_history(state: dict, keep: int = 40, threshold: int = 80, max_summary_chars: int = 4000):
+def compact_history(state: dict, keep: int = 80, threshold: int = 120, max_summary_chars: int = 8000):
     history = state.get("history", [])
     if len(history) <= threshold:
         return
@@ -1813,11 +1839,67 @@ async def update_agent_file(agent_id: str, filename: str, request: Request):
         logger.error(f"Error writing {filepath}: {e}")
         return {"error": str(e)}
 
+
+# Cache de JIDs onde o Eduardo já respondeu (evita queries repetidas à API)
+_owner_replied_cache = set()
+# Cache de LID -> número real (remoteJidAlt)
+_lid_to_alt = {}
+
+async def has_owner_replied(sender_jid: str) -> bool:
+    """Verifica se o Eduardo já enviou alguma mensagem para esse JID.
+    Se sim, o bot NÃO deve responder (apenas leads novos sem interação do owner)."""
+    # Números liberados manualmente sempre podem receber resposta do bot
+    sender_number = normalize_block_key(sender_jid)
+    if sender_number in BOT_ALLOWED_NUMBERS:
+        return False
+    # Também verificar se o JID alternativo (remoteJidAlt) está na whitelist
+    alt_jid = _lid_to_alt.get(sender_jid, "")
+    if alt_jid:
+        alt_number = normalize_block_key(alt_jid)
+        if alt_number in BOT_ALLOWED_NUMBERS:
+            return False
+    if sender_jid in _owner_replied_cache:
+        return True
+    try:
+        headers = {"apikey": EVOLUTION_API_KEY, "Content-Type": "application/json"}
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.post(
+                f"{EVOLUTION_BASE_URL}/chat/findMessages/{EVOLUTION_INSTANCE}",
+                headers=headers,
+                json={
+                    "where": {
+                        "key": {
+                            "fromMe": True,
+                            "remoteJid": sender_jid
+                        }
+                    },
+                    "limit": 1
+                }
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                records = data.get("messages", {}).get("records", [])
+                if records:
+                    _owner_replied_cache.add(sender_jid)
+                    return True
+        return False
+    except Exception as e:
+        logger.error(f"has_owner_replied error for {sender_jid}: {e}")
+        return False
+
 # --- LOGICA KIMI ---
 async def process_with_kimi(sender_jid: str, current_text: str, image_bytes: bytes = None, image_mime: str = None, audio_reply: bool = False):
+    # Força audio_reply como True para teste global (Topico 1)
+    audio_reply = True 
+    
     sender_number = normalize_block_key(sender_jid)
     if is_ignored_target(sender_number):
         logger.info(f"Ignored blacklisted sender at process stage: {sender_jid}")
+        return
+
+    # Regra: bot só responde contatos novos (sem interação prévia do Eduardo)
+    if await has_owner_replied(sender_jid):
+        logger.info(f"Skipped: owner already replied to {sender_jid}")
         return
 
     is_new_lead = sender_jid not in local_memory
@@ -1833,6 +1915,10 @@ async def process_with_kimi(sender_jid: str, current_text: str, image_bytes: byt
         return
 
     if is_new_lead:
+        state["paused"] = False
+        state.pop("paused_at", None)
+    # Auto-unpause BOT_ALLOWED_NUMBERS
+    if state.get("paused") and normalize_block_key(sender_jid) in BOT_ALLOWED_NUMBERS:
         state["paused"] = False
         state.pop("paused_at", None)
     if state.get("paused"):
@@ -1986,21 +2072,22 @@ async def _handle_message_inner(sender_jid, current_text, state, is_new_lead, im
         "PIX (SÓ INFORME QUANDO PERGUNTADO): 58068737000126 (50% entrada / 50% entrega).\n"
         "Se o cliente aceitar o orçamento, ofereça uma demonstração sem custo.\n"
         "29. Na PRIMEIRA mensagem de um novo lead, personalize a saudação conforme o perfil comercial detectado e conduza com uma pergunta objetiva. NÃO mencione preços sem o lead pedir.\n"
-        "30. Seja o MAIS DIRETO possível. Direcione o lead para a compra de forma natural e objetiva.\n"
+        "30. Seja o MAIS DIRETO possível. Responda APENAS o que o usuário perguntou ou comentou. Não puxe assuntos novos nem tente ser criativo demais. Direcione o lead para a compra de forma natural e objetiva.\n"
         "31. Destaque os BENEFÍCIOS do nosso serviço: hospedagem gratuita inclusa, suporte técnico ilimitado, entrega rápida e site profissional de alta qualidade. Use esses diferenciais para convencer o lead.\n"
         "32. Após entender a necessidade do lead, apresente os benefícios antes do preço. Mostre o valor antes do custo.\n"
-        "33. ECONOMIZE MENSAGENS. Seja o mais breve e conciso possível. Máximo 2-3 frases por resposta. Quanto menos texto, melhor. Vá direto ao ponto sem enrolação.\n"
-        "34. Seja PRAGMÁTICO. Foque no que resolve o problema do lead. Sem rodeios, sem floreios, sem repetição. Cada mensagem deve avançar a conversa para o fechamento.\n"
+        "33. ECONOMIZE MENSAGENS. Seja breve e conciso, mas responda a todos os pontos levantados pelo lead. Se ele fizer três perguntas, responda as três de forma direta.\n"
+        "34. Seja PRAGMÁTICO. Foque no que resolve o problema do lead. Vá direto ao ponto sem enrolação, mas sem ignorar partes da dúvida do cliente.\n"
         "35. Use URGÊNCIA SUTIL: mencione que a agenda está limitada ('temos vagas para esta semana') para acelerar a decisão. Não force, apenas sinalize.\n"
         "36. Use PROVA SOCIAL: cite que já entregamos mais de 50 sites profissionais. Isso gera confiança.\n"
         "37. Quando o lead perguntar preço, responda DIRETO e já pergunte 'quer começar?' ou 'posso reservar sua vaga?'. Não enrole após dar o valor.\n"
         "38. Após 3 trocas de mensagem, ofereça mostrar um exemplo real ou demonstração de site similar ao que o lead precisa.\n"
         "39. NUNCA repita informação que já foi dita. Se já mencionou algo, avance para o próximo passo.\n"
         "40. Se o lead não demonstra interesse após 2 tentativas, encerre cordialmente sem insistir. Exemplo: 'Fico à disposição quando precisar.'\n"
-        "41. Sempre termine com UMA ÚNICA pergunta ou chamada para ação clara. Nunca duas perguntas na mesma mensagem.\n"
+        "41. Sempre termine com UMA ÚNICA pergunta ou chamada para ação clara, e apenas se for necessário para o fluxo da conversa. Se o usuário apenas agradeceu, encerre cordialmente sem novas perguntas.\n"
         "42. Use o NOME do lead com moderação: no máximo na primeira saudação e, depois, apenas pontualmente (ex.: retomada de contato). NUNCA repetir o nome em toda mensagem/frase.\n"
-        "43. NUNCA dê respostas genéricas. Sempre personalize com base no que o lead disse anteriormente, sem depender de repetir o nome.\n"
-        "44. Se perguntarem de onde somos, responda exatamente: 'Somos de Caxias do Sul, RS.'\n"
+        "43. NUNCA dê respostas genéricas. Sempre personalize com base no que o lead disse anteriormente. Use o histórico para citar exemplos que façam sentido para o negócio dele.\n"
+        "44. CLASSIFICAÇÃO DE LEAD (INTERNO): Identifique se o lead é 'Curioso' (perguntas vagas, sem intenção clara) ou 'Comprador' (perguntas sobre preço, prazo, fechamento). Se for Comprador, seja mais incisivo e ofereça o orçamento logo.\n"
+        "45. Se perguntarem de onde somos, responda exatamente: 'Somos de Caxias do Sul, RS.'\n"
         "Se pedirem: também fazemos produção de vídeos, design gráfico e tráfego pago (orçamento personalizado).\n"
         "Para sistemas personalizados e automações com IA: informe que fazemos e que o orçamento é personalizado; em seguida fique em silêncio (não responda).\n"
         "Nunca cite OpenClaw, sistema, IA ou bastidores.\n"
@@ -2195,11 +2282,16 @@ async def evolution_webhook(request: Request, background_tasks: BackgroundTasks,
                 return {"status": "ignored", "reason": "bot_notification_loop_guard"}
             pass  # Continua processando normalmente para o owner testar
         elif sender_jid and sender_jid.split("@")[0] != OWNER_NUMBER and not sender_jid.endswith("@g.us"):
-            local_memory.setdefault(sender_jid, {"history": [], "lead": {"name": None, "business": None, "site_type": None, "budget": None, "deadline": None, "goal": None, "urgency": None, "stage": "novo"}, "summary": ""})
-            state = local_memory[sender_jid]
-            if not state.get("paused"):
-                state["paused"] = True
-                state["paused_at"] = int(time.time() * 1000)
+            # Não pausar números liberados para o bot
+            sender_num_wh = normalize_block_key(sender_jid)
+            if sender_num_wh in BOT_ALLOWED_NUMBERS:
+                pass  # Não pausa, permite bot continuar respondendo
+            else:
+                local_memory.setdefault(sender_jid, {"history": [], "lead": {"name": None, "business": None, "site_type": None, "budget": None, "deadline": None, "goal": None, "urgency": None, "stage": "novo"}, "summary": ""})
+                state = local_memory[sender_jid]
+                if not state.get("paused"):
+                    state["paused"] = True
+                    state["paused_at"] = int(time.time() * 1000)
             if not state.get("paused_notified"):
                 await send_telegram_message(f"⚠️ BOT PAUSADO: {sender_jid} por intervenção humana.")
                 state["paused_notified"] = True
