@@ -18,6 +18,7 @@ import re
 import os
 import random
 from dotenv import load_dotenv
+from src.marketing_automation import router as marketing_router, start_scheduler, stop_scheduler
 
 # Configurações de log
 logging.basicConfig(level=logging.INFO)
@@ -57,6 +58,17 @@ DB_PATH = os.getenv("DB_PATH", "./data/agent.db")
 LOG_FILE = os.getenv("LOG_FILE", "./logs/app.log")
 
 app = FastAPI(title="WhatsApp AI Agent", version="1.0.0")
+app.include_router(marketing_router)
+
+
+@app.on_event("startup")
+async def _on_startup():
+    start_scheduler()
+
+
+@app.on_event("shutdown")
+async def _on_shutdown():
+    stop_scheduler()
 
 # CORS
 app.add_middleware(
