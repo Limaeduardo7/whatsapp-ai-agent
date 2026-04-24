@@ -60,6 +60,7 @@ LOG_FILE = os.getenv("LOG_FILE", "./logs/app.log")
 # Modo comercial (closer)
 CLOSER_ENABLED = str(os.getenv("CLOSER_ENABLED", "true")).strip().lower() in {"1", "true", "yes", "on"}
 MAX_HISTORY_MESSAGES = int(os.getenv("MAX_HISTORY_MESSAGES", "12"))
+TYPING_ENABLED = str(os.getenv("TYPING_ENABLED", "true")).strip().lower() in {"1", "true", "yes", "on"}
 
 PRODUCT_LINKS = {
     "chave": "https://syncronix.co/ebook-a-chave-do-poder",
@@ -202,6 +203,40 @@ def get_history(phone: str) -> list:
     return history[-MAX_HISTORY_MESSAGES:]
 
 
+def extract_text_from_message(message_content: dict) -> str:
+    """Extrai texto de formatos comuns do Baileys/Evolution."""
+    if not isinstance(message_content, dict):
+        return ""
+
+    direct_keys = [
+        ("conversation", None),
+        ("extendedTextMessage", "text"),
+        ("imageMessage", "caption"),
+        ("videoMessage", "caption"),
+        ("documentMessage", "caption"),
+    ]
+
+    for key, sub in direct_keys:
+        obj = message_content.get(key)
+        if sub is None and isinstance(obj, str) and obj.strip():
+            return obj.strip()
+        if sub and isinstance(obj, dict):
+            val = obj.get(sub)
+            if isinstance(val, str) and val.strip():
+                return val.strip()
+
+    # Wrappers comuns
+    for wrapper in ("ephemeralMessage", "viewOnceMessage", "viewOnceMessageV2", "documentWithCaptionMessage"):
+        wrapped = message_content.get(wrapper)
+        if isinstance(wrapped, dict):
+            inner = wrapped.get("message") if isinstance(wrapped.get("message"), dict) else wrapped
+            text = extract_text_from_message(inner)
+            if text:
+                return text
+
+    return ""
+
+
 def _extract_llm_text(data: dict) -> str:
     choice = (data.get("choices") or [{}])[0]
     message = choice.get("message") or {}
@@ -295,13 +330,10 @@ async def handle_message(data: dict):
 
         # Extrai texto da mensagem
         message_content = message_data.get("message", {})
-        text = (
-            message_content.get("conversation") or
-            message_content.get("extendedTextMessage", {}).get("text") or
-            ""
-        ).strip()
+        text = extract_text_from_message(message_content)
 
         if not sender or not text:
+            logger.info(f"Ignoring non-text or empty message from {sender}")
             return
 
         logger.info(f"Incoming message from {sender}")
@@ -327,9 +359,9 @@ async def handle_message(data: dict):
             await send_text(sender, "Tive uma instabilidade rápida aqui. Me chama de novo com sua dúvida que eu já te respondo. 🤝")
 
 
-async def send_typing(number: str, delay_ms: int = 1500) -> None:
+async def send_typing(number: str, delay_ms: int = 900) -> None:
     """Dispara presença 'composing' (digitando) com best-effort."""
-    if not EVOLUTION_API_KEY:
+    if not EVOLUTION_API_KEY or not TYPING_ENABLED:
         return
 
     headers = {
@@ -343,11 +375,12 @@ async def send_typing(number: str, delay_ms: int = 1500) -> None:
         (f"{EVOLUTION_BASE_URL}/presence/set/{EVOLUTION_INSTANCE}", {"number": number, "presence": "composing", "delay": delay_ms}),
     ]
 
-    async with httpx.AsyncClient(timeout=10) as client:
+    async with httpx.AsyncClient(timeout=2.5) as client:
         for url, payload in candidates:
             try:
                 resp = await client.post(url, headers=headers, json=payload)
-                if resp.status_code < 400:
+                # qualquer resposta indica endpoint alcançado; não travar fluxo
+                if resp.status_code < 500:
                     return
             except Exception:
                 continue
@@ -384,8 +417,8 @@ async def send_bubbles(number: str, text: str):
     parts = [p.strip() for p in parts if p.strip()]
 
     for part in parts:
-        # Simula digitação antes de cada balão
-        typing_ms = max(900, min(3500, len(part) * 35))
+        # Simula digitação curta para não atrasar resposta
+        typing_ms = max(500, min(1200, len(part) * 12))
         await send_typing(number, delay_ms=typing_ms)
         await asyncio.sleep(typing_ms / 1000)
 
@@ -393,14 +426,14 @@ async def send_bubbles(number: str, text: str):
             # Quebra mensagens longas
             for i in range(0, len(part), 500):
                 chunk = part[i:i+500]
-                chunk_typing_ms = max(700, min(2500, len(chunk) * 25))
+                chunk_typing_ms = max(400, min(1000, len(chunk) * 10))
                 await send_typing(number, delay_ms=chunk_typing_ms)
                 await asyncio.sleep(chunk_typing_ms / 1000)
                 await send_text(number, chunk)
-                await asyncio.sleep(0.8)
+                await asyncio.sleep(0.4)
         else:
             await send_text(number, part)
-            await asyncio.sleep(random.uniform(0.4, 1.0))
+            await asyncio.sleep(random.uniform(0.2, 0.6))
 
 
 if __name__ == "__main__":
