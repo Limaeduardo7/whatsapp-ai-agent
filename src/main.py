@@ -57,6 +57,42 @@ BLACKLIST_FILE = os.getenv("BLACKLIST_FILE", "./data/ignored_numbers.json")
 DB_PATH = os.getenv("DB_PATH", "./data/agent.db")
 LOG_FILE = os.getenv("LOG_FILE", "./logs/app.log")
 
+# Modo comercial (closer)
+CLOSER_ENABLED = str(os.getenv("CLOSER_ENABLED", "true")).strip().lower() in {"1", "true", "yes", "on"}
+MAX_HISTORY_MESSAGES = int(os.getenv("MAX_HISTORY_MESSAGES", "12"))
+
+PRODUCT_LINKS = {
+    "chave": "https://syncronix.co/ebook-a-chave-do-poder",
+    "regra": "https://syncronix.co/ebook-a-regra-da-vida",
+    "algoritmo": "https://syncronix.co/ebook-o-algoritmo-do-universo",
+    "energy": "https://syncronix.co/energy-hack",
+    "gestao": "https://syncronix.co/gestao-inteligente",
+}
+
+CLOSER_SYSTEM_PROMPT = f"""
+Você é closer comercial da Syncronix no WhatsApp.
+Objetivo: converter com ética, clareza e foco em resultado.
+
+Regras:
+- Seja direto, humano, confiante e consultivo.
+- Mensagens curtas (2-6 linhas), sem texto longo.
+- Faça no máximo 1 pergunta por resposta.
+- Conduza para próximo passo com CTA claro.
+- Quando fizer sentido, ofereça o link correto do produto.
+
+Produtos/links:
+- Chave do Poder: {PRODUCT_LINKS['chave']}
+- Regra da Vida: {PRODUCT_LINKS['regra']}
+- Algoritmo do Universo: {PRODUCT_LINKS['algoritmo']}
+- Energy Hack: {PRODUCT_LINKS['energy']}
+- Gestão Inteligente: {PRODUCT_LINKS['gestao']}
+
+Política comercial:
+- Não inventar preço, prazo ou bônus não confirmados.
+- Se cliente pedir suporte humano, responda com handoff amigável.
+- Se cliente disser parar/sair/não quero, respeite e encerre.
+""".strip()
+
 app = FastAPI(title="WhatsApp AI Agent", version="1.0.0")
 app.include_router(marketing_router)
 
@@ -134,17 +170,55 @@ async def evolution_webhook(request: Request, background_tasks: BackgroundTasks)
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
 
-async def call_llm(user_message: str) -> str:
+def load_chat_memory() -> dict:
+    os.makedirs(os.path.dirname(MEMORY_FILE), exist_ok=True)
+    if not os.path.exists(MEMORY_FILE):
+        return {}
+    try:
+        with open(MEMORY_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def save_chat_memory(mem: dict) -> None:
+    os.makedirs(os.path.dirname(MEMORY_FILE), exist_ok=True)
+    with open(MEMORY_FILE, "w", encoding="utf-8") as f:
+        json.dump(mem, f, ensure_ascii=False, indent=2)
+
+
+def append_memory(phone: str, role: str, content: str) -> None:
+    mem = load_chat_memory()
+    history = mem.get(phone, [])
+    history.append({"role": role, "content": content})
+    mem[phone] = history[-MAX_HISTORY_MESSAGES:]
+    save_chat_memory(mem)
+
+
+def get_history(phone: str) -> list:
+    mem = load_chat_memory()
+    history = mem.get(phone, [])
+    return history[-MAX_HISTORY_MESSAGES:]
+
+
+async def call_llm(user_message: str, phone: str) -> str:
     """Chama o modelo configurado via endpoint OpenAI-compatible."""
     if not OPENAI_API_KEY:
         raise RuntimeError("LLM_API_KEY is missing")
 
     thinking_enabled = str(THINKING_LEVEL).strip().lower() in {"true", "high", "1", "yes", "on"}
 
+    messages = []
+    if CLOSER_ENABLED:
+        messages.append({"role": "system", "content": CLOSER_SYSTEM_PROMPT})
+    messages.extend(get_history(phone))
+    messages.append({"role": "user", "content": user_message})
+
     payload = {
         "model": MODEL_ID,
-        "messages": [{"role": "user", "content": user_message}],
-        "max_tokens": 1024,
+        "messages": messages,
+        "max_tokens": 600,
         "temperature": 0.7,
         "top_p": 1,
         "stream": False,
@@ -211,11 +285,19 @@ async def handle_message(data: dict):
 
         logger.info(f"Incoming message from {sender}")
 
-        llm_reply = await call_llm(text)
+        lower_text = text.lower()
+        if any(x in lower_text for x in ["parar", "sair", "não quero", "nao quero", "stop"]):
+            await send_text(sender, "Perfeito. Vou encerrar as mensagens por aqui. Se quiser retomar depois, é só me chamar. 🤝")
+            return
+
+        append_memory(sender, "user", text)
+
+        llm_reply = await call_llm(text, sender)
         if not llm_reply:
             logger.warning("LLM returned empty reply")
             return
 
+        append_memory(sender, "assistant", llm_reply)
         await send_bubbles(sender, llm_reply)
 
     except Exception as e:
