@@ -202,6 +202,28 @@ def get_history(phone: str) -> list:
     return history[-MAX_HISTORY_MESSAGES:]
 
 
+def _extract_llm_text(data: dict) -> str:
+    choice = (data.get("choices") or [{}])[0]
+    message = choice.get("message") or {}
+    content = message.get("content")
+
+    if isinstance(content, str) and content.strip():
+        return content.strip()
+
+    if isinstance(content, list):
+        parts = [part.get("text", "") for part in content if isinstance(part, dict)]
+        joined = " ".join([p for p in parts if p]).strip()
+        if joined:
+            return joined
+
+    for fallback_key in ("output_text", "output", "text"):
+        fallback = message.get(fallback_key) or choice.get(fallback_key) or data.get(fallback_key)
+        if isinstance(fallback, str) and fallback.strip():
+            return fallback.strip()
+
+    return ""
+
+
 async def call_llm(user_message: str, phone: str) -> str:
     """Chama o modelo configurado via endpoint OpenAI-compatible."""
     if not OPENAI_API_KEY:
@@ -222,10 +244,8 @@ async def call_llm(user_message: str, phone: str) -> str:
         "temperature": 0.7,
         "top_p": 1,
         "stream": False,
+        "chat_template_kwargs": {"thinking": bool(thinking_enabled)},
     }
-
-    if thinking_enabled:
-        payload["chat_template_kwargs"] = {"thinking": True}
 
     headers = {
         "Content-Type": "application/json",
@@ -238,29 +258,30 @@ async def call_llm(user_message: str, phone: str) -> str:
         response.raise_for_status()
         data = response.json()
 
-    choice = (data.get("choices") or [{}])[0]
-    message = choice.get("message") or {}
-    content = message.get("content")
+    text = _extract_llm_text(data)
+    if text:
+        return text
 
-    if isinstance(content, str) and content.strip():
-        return content.strip()
+    # Retry sem thinking para evitar respostas com content=null
+    retry_payload = dict(payload)
+    retry_payload.pop("chat_template_kwargs", None)
+    retry_payload["max_tokens"] = 400
 
-    if isinstance(content, list):
-        parts = [part.get("text", "") for part in content if isinstance(part, dict)]
-        joined = " ".join([p for p in parts if p]).strip()
-        if joined:
-            return joined
+    async with httpx.AsyncClient(timeout=45) as client:
+        response2 = await client.post(OPENAI_API_URL, headers=headers, json=retry_payload)
+        response2.raise_for_status()
+        data2 = response2.json()
 
-    for fallback_key in ("reasoning_content", "output_text", "output"):
-        fallback = message.get(fallback_key) or choice.get(fallback_key) or data.get(fallback_key)
-        if isinstance(fallback, str) and fallback.strip():
-            return fallback.strip()
+    text2 = _extract_llm_text(data2)
+    if text2:
+        return text2
 
     raise RuntimeError("LLM response without usable content")
 
 
 async def handle_message(data: dict):
     """Processa mensagem recebida e gera resposta."""
+    sender = ""
     try:
         message_data = data.get("data", {})
         key = message_data.get("key", {})
@@ -301,7 +322,9 @@ async def handle_message(data: dict):
         await send_bubbles(sender, llm_reply)
 
     except Exception as e:
-        logger.error(f"Error handling message: {e}")
+        logger.exception(f"Error handling message: {e}")
+        if sender:
+            await send_text(sender, "Tive uma instabilidade rápida aqui. Me chama de novo com sua dúvida que eu já te respondo. 🤝")
 
 
 async def send_text(number: str, text: str) -> bool:
