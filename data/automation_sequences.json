@@ -1,0 +1,46 @@
+{
+  "sequences": [
+    {
+      "id": "seq_chave_para_regra",
+      "name": "Cross-sell: Chave do Poder -> Regra da Vida",
+      "trigger_products": ["chave do poder", "la clave del poder", "the key of power"],
+      "target_product": "A Regra da Vida",
+      "repeat_last_every_hours": 72,
+      "steps": [
+        {
+          "text": "Parabéns pela sua compra da Chave do Poder. 👊\n\nAgora vem a etapa que separa quem se inspira de quem muda de vida: execução diária.\n\nA Regra da Vida foi criada exatamente para isso — transformar clareza em disciplina e resultado.\n\nAcesse aqui: https://syncronix.co/ebook-a-regra-da-vida",
+          "delay_hours_after": 2
+        },
+        {
+          "text": "Rápido e direto: a maioria não falha por falta de conhecimento. Falha por padrão mental repetido no dia a dia.\n\nA Regra da Vida te entrega o método prático para quebrar esse ciclo e manter consistência.\n\nLink: https://syncronix.co/ebook-a-regra-da-vida\n\nSe quiser, te explico em 1 mensagem como aplicar ainda hoje.",
+          "delay_hours_after": 24
+        },
+        {
+          "text": "Último lembrete desta janela: se você quer acelerar resultado de forma estruturada, o próximo passo é A Regra da Vida.\n\nEntrar agora: https://syncronix.co/ebook-a-regra-da-vida\n\nSe preferir, me responde " + "\"EU QUERO\"" + " que eu te envio o caminho mais rápido.",
+          "delay_hours_after": 48
+        }
+      ]
+    },
+    {
+      "id": "seq_regra_para_algoritmo",
+      "name": "Cross-sell: Regra da Vida -> Algoritmo do Universo",
+      "trigger_products": ["regra da vida", "regla de la vida", "rule of life"],
+      "target_product": "O Algoritmo do Universo",
+      "repeat_last_every_hours": 72,
+      "steps": [
+        {
+          "text": "Excelente decisão com A Regra da Vida. 🚀\n\nPróximo nível recomendado: O Algoritmo do Universo.\n\nEle te ajuda a ler o sistema por trás dos seus resultados, para parar de agir no escuro e decidir com precisão.\n\nAcesse: https://syncronix.co/ebook-o-algoritmo-do-universo",
+          "delay_hours_after": 4
+        },
+        {
+          "text": "Ponto crítico: estratégia sem leitura correta da realidade gera esforço alto e retorno baixo.\n\nO Algoritmo do Universo corrige esse ponto e aumenta a qualidade das suas decisões.\n\nLink direto: https://syncronix.co/ebook-o-algoritmo-do-universo\n\nSe quiser, te mando um resumo dos 3 ganhos práticos antes de você entrar.",
+          "delay_hours_after": 24
+        },
+        {
+          "text": "Fechamento desta janela: se você quer consolidar sua evolução, esse é o próximo passo mais lógico.\n\nO Algoritmo do Universo: https://syncronix.co/ebook-o-algoritmo-do-universo\n\nSe quiser ajuda para decidir rápido, me responde " + "\"QUERO AVANÇAR\"" + ".",
+          "delay_hours_after": 48
+        }
+      ]
+    }
+  ]
+}
