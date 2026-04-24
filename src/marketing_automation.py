@@ -464,6 +464,18 @@ def _store_message_log(phone: str, sequence_id: str, step_index: int, text: str,
         conn.commit()
 
 
+def _already_sent_marketing_today(phone: str) -> bool:
+    """Regra comercial: no máximo 1 mensagem de marketing por dia por contato (UTC)."""
+    now = now_utc()
+    day_start = datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
+    with sqlite3.connect(DB_PATH) as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) FROM marketing_messages WHERE phone = ? AND datetime(created_at) >= datetime(?)",
+            (phone, to_iso(day_start)),
+        ).fetchone()
+    return bool(row and row[0] > 0)
+
+
 async def _process_due_customers_once() -> None:
     sequence_map = _get_sequence_map()
     due_customers = _get_due_customers()
@@ -487,6 +499,12 @@ async def _process_due_customers_once() -> None:
         if step_idx >= len(steps):
             repeat_hours = int(seq.get("repeat_last_every_hours", 0) or 0)
             if repeat_hours > 0:
+                # regra: no máximo 1 mensagem de marketing/dia/contato
+                if _already_sent_marketing_today(phone):
+                    next_dt = now_utc() + timedelta(days=1)
+                    _update_customer_state(phone, step=len(steps), next_send_at=to_iso(next_dt), status="active")
+                    continue
+
                 # repete último passo
                 last_idx = len(steps) - 1
                 step_obj = steps[last_idx]
@@ -509,6 +527,12 @@ async def _process_due_customers_once() -> None:
 
         if not text:
             _update_customer_state(phone, step=step_idx + 1, next_send_at=to_iso(now_utc()), status="active")
+            continue
+
+        # regra: no máximo 1 mensagem de marketing/dia/contato
+        if _already_sent_marketing_today(phone):
+            next_dt = now_utc() + timedelta(days=1)
+            _update_customer_state(phone, step=step_idx, next_send_at=to_iso(next_dt), status="active")
             continue
 
         try:
