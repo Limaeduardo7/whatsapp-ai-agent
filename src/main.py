@@ -327,6 +327,32 @@ async def handle_message(data: dict):
             await send_text(sender, "Tive uma instabilidade rápida aqui. Me chama de novo com sua dúvida que eu já te respondo. 🤝")
 
 
+async def send_typing(number: str, delay_ms: int = 1500) -> None:
+    """Dispara presença 'composing' (digitando) com best-effort."""
+    if not EVOLUTION_API_KEY:
+        return
+
+    headers = {
+        "Content-Type": "application/json",
+        "apikey": EVOLUTION_API_KEY,
+    }
+
+    candidates = [
+        (f"{EVOLUTION_BASE_URL}/chat/sendPresence/{EVOLUTION_INSTANCE}", {"number": number, "presence": "composing", "delay": delay_ms}),
+        (f"{EVOLUTION_BASE_URL}/chat/presence/{EVOLUTION_INSTANCE}", {"number": number, "presence": "composing", "delay": delay_ms}),
+        (f"{EVOLUTION_BASE_URL}/presence/set/{EVOLUTION_INSTANCE}", {"number": number, "presence": "composing", "delay": delay_ms}),
+    ]
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        for url, payload in candidates:
+            try:
+                resp = await client.post(url, headers=headers, json=payload)
+                if resp.status_code < 400:
+                    return
+            except Exception:
+                continue
+
+
 async def send_text(number: str, text: str) -> bool:
     """Envia mensagem de texto via Evolution API."""
     try:
@@ -358,14 +384,23 @@ async def send_bubbles(number: str, text: str):
     parts = [p.strip() for p in parts if p.strip()]
 
     for part in parts:
+        # Simula digitação antes de cada balão
+        typing_ms = max(900, min(3500, len(part) * 35))
+        await send_typing(number, delay_ms=typing_ms)
+        await asyncio.sleep(typing_ms / 1000)
+
         if len(part) > 500:
             # Quebra mensagens longas
             for i in range(0, len(part), 500):
-                await send_text(number, part[i:i+500])
-                await asyncio.sleep(1)
+                chunk = part[i:i+500]
+                chunk_typing_ms = max(700, min(2500, len(chunk) * 25))
+                await send_typing(number, delay_ms=chunk_typing_ms)
+                await asyncio.sleep(chunk_typing_ms / 1000)
+                await send_text(number, chunk)
+                await asyncio.sleep(0.8)
         else:
             await send_text(number, part)
-            await asyncio.sleep(random.uniform(0.5, 1.5))
+            await asyncio.sleep(random.uniform(0.4, 1.0))
 
 
 if __name__ == "__main__":
