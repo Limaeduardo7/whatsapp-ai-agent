@@ -37,10 +37,33 @@ def from_iso(value: str) -> datetime:
 
 
 def normalize_phone(raw: Optional[str]) -> Optional[str]:
-    if not raw:
+    if raw is None:
         return None
-    digits = "".join(ch for ch in str(raw) if ch.isdigit())
+
+    # evita interpretar números não telefônicos (ids/timestamps)
+    s = str(raw).strip()
+    if not s:
+        return None
+
+    # se contém letras, normalmente é id/transação (não telefone)
+    if any(ch.isalpha() for ch in s):
+        return None
+
+    digits = "".join(ch for ch in s if ch.isdigit())
     if not digits:
+        return None
+
+    # rejeita epoch em ms (13 dígitos típicos de data)
+    if len(digits) == 13:
+        try:
+            n = int(digits)
+            if 1500000000000 <= n <= 2500000000000:
+                return None
+        except Exception:
+            pass
+
+    # rejeita sequências óbvias inválidas
+    if len(set(digits)) == 1:
         return None
 
     # Brasil: adiciona DDI 55 se vier sem
@@ -49,8 +72,10 @@ def normalize_phone(raw: Optional[str]) -> Optional[str]:
     if len(digits) == 10 and not digits.startswith("55"):
         digits = f"55{digits}"
 
-    if len(digits) < 12:
+    # telefone internacional típico
+    if not (12 <= len(digits) <= 15):
         return None
+
     return digits
 
 
@@ -127,6 +152,48 @@ def _find_sequence_for_product(product_name: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+def _find_phone_deep(obj: Any) -> Optional[str]:
+    """Procura telefone em qualquer nível do payload (phone/cell/whatsapp/mobile)."""
+    if isinstance(obj, dict):
+        # prioridade por chaves conhecidas
+        preferred_keys = [
+            "checkout_phone", "phone", "phone_number", "mobile_phone",
+            "mobile", "cellphone", "cell_phone", "whatsapp", "whatsapp_phone",
+        ]
+        for k in preferred_keys:
+            if k in obj:
+                n = normalize_phone(obj.get(k))
+                if n:
+                    return n
+
+        # varre todas as chaves com nomes relacionados
+        for k, v in obj.items():
+            lk = str(k).lower()
+            if any(t in lk for t in ["phone", "cell", "mobile", "whatsapp", "tel"]):
+                n = normalize_phone(v)
+                if n:
+                    return n
+
+        # desce recursivamente
+        for v in obj.values():
+            n = _find_phone_deep(v)
+            if n:
+                return n
+
+    elif isinstance(obj, list):
+        for v in obj:
+            n = _find_phone_deep(v)
+            if n:
+                return n
+
+    else:
+        n = normalize_phone(obj)
+        if n:
+            return n
+
+    return None
+
+
 def _extract_hotmart_fields(payload: Dict[str, Any]) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str], str]:
     event = str(payload.get("event") or payload.get("event_name") or payload.get("type") or "").lower()
 
@@ -139,8 +206,12 @@ def _extract_hotmart_fields(payload: Dict[str, Any]) -> Tuple[Optional[str], Opt
         buyer.get("phone"),
         buyer.get("checkout_phone"),
         buyer.get("phone_number"),
+        buyer.get("mobile"),
+        buyer.get("whatsapp"),
         data.get("phone"),
         data.get("buyer_phone"),
+        (data.get("contact") or {}).get("phone") if isinstance(data.get("contact"), dict) else None,
+        (data.get("customer") or {}).get("phone") if isinstance(data.get("customer"), dict) else None,
     ]
 
     product_candidates = [
@@ -154,6 +225,7 @@ def _extract_hotmart_fields(payload: Dict[str, Any]) -> Tuple[Optional[str], Opt
         data.get("purchase_id"),
         data.get("transaction"),
         data.get("id"),
+        (data.get("purchase") or {}).get("transaction") if isinstance(data.get("purchase"), dict) else None,
         (data.get("purchase") or {}).get("id") if isinstance(data.get("purchase"), dict) else None,
     ]
 
@@ -162,9 +234,14 @@ def _extract_hotmart_fields(payload: Dict[str, Any]) -> Tuple[Optional[str], Opt
         data.get("purchase_date"),
         data.get("date_approved"),
         data.get("created_at"),
+        (data.get("purchase") or {}).get("approved_date") if isinstance(data.get("purchase"), dict) else None,
+        (data.get("purchase") or {}).get("order_date") if isinstance(data.get("purchase"), dict) else None,
     ]
 
     phone = next((normalize_phone(v) for v in phone_candidates if normalize_phone(v)), None)
+    if not phone:
+        phone = _find_phone_deep(payload)
+
     product = next((str(v).strip() for v in product_candidates if v), None)
     purchase_id = next((str(v).strip() for v in purchase_id_candidates if v), None)
     approved_at = next((str(v).strip() for v in approved_at_candidates if v), None)
@@ -396,6 +473,7 @@ async def hotmart_webhook(
     phone, product, purchase_id, approved_at, event = _extract_hotmart_fields(payload)
 
     if not phone or not product:
+        logger.warning(f"Hotmart payload ignored: missing phone/product | event={event} | keys={list((payload.get('data') or payload).keys())[:15]}")
         return {
             "status": "ignored",
             "reason": "missing_phone_or_product",
