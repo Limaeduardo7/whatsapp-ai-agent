@@ -183,6 +183,7 @@ def init_chat_db() -> None:
                 phone TEXT PRIMARY KEY,
                 name TEXT,
                 language TEXT,
+                summary_text TEXT,
                 last_seen_at TEXT,
                 updated_at TEXT NOT NULL
             )
@@ -205,7 +206,39 @@ def init_chat_db() -> None:
             ON chat_messages(phone, id)
             """
         )
+
+        # Migração simples para bancos antigos
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(chat_profiles)").fetchall()]
+        if "summary_text" not in cols:
+            conn.execute("ALTER TABLE chat_profiles ADD COLUMN summary_text TEXT")
+
         conn.commit()
+
+
+def _build_summary(conn: sqlite3.Connection, phone: str) -> str:
+    rows = conn.execute(
+        "SELECT role, content FROM chat_messages WHERE phone = ? ORDER BY id DESC LIMIT 16",
+        (phone,),
+    ).fetchall()
+    rows = list(reversed(rows))
+
+    user_points = []
+    assistant_points = []
+    for role, content in rows:
+        c = (content or "").strip().replace("\n", " ")
+        if not c:
+            continue
+        if role == "user" and len(user_points) < 8:
+            user_points.append(c[:140])
+        if role == "assistant" and len(assistant_points) < 4:
+            assistant_points.append(c[:140])
+
+    parts = []
+    if user_points:
+        parts.append("Cliente disse: " + " | ".join(user_points))
+    if assistant_points:
+        parts.append("Bot respondeu: " + " | ".join(assistant_points))
+    return " || ".join(parts)[:1200]
 
 
 def append_memory(phone: str, role: str, content: str) -> None:
@@ -237,7 +270,22 @@ def append_memory(phone: str, role: str, content: str) -> None:
             """,
             (phone, phone, MAX_HISTORY_MESSAGES * 4),
         )
+
+        summary = _build_summary(conn, phone)
+        conn.execute(
+            "UPDATE chat_profiles SET summary_text=?, updated_at=? WHERE phone=?",
+            (summary, ts, phone),
+        )
+
         conn.commit()
+
+
+def get_profile_summary(phone: str) -> str:
+    with sqlite3.connect(DB_PATH) as conn:
+        row = conn.execute("SELECT summary_text FROM chat_profiles WHERE phone=?", (phone,)).fetchone()
+    if not row:
+        return ""
+    return (row[0] or "").strip()
 
 
 def get_history(phone: str) -> list:
@@ -318,6 +366,11 @@ async def call_llm(user_message: str, phone: str) -> str:
     messages = []
     if CLOSER_ENABLED:
         messages.append({"role": "system", "content": CLOSER_SYSTEM_PROMPT})
+
+    summary = get_profile_summary(phone)
+    if summary:
+        messages.append({"role": "system", "content": f"Contexto resumido do cliente: {summary}"})
+
     messages.extend(get_history(phone))
     messages.append({"role": "user", "content": user_message})
 
