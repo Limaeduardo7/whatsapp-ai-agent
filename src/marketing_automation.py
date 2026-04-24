@@ -21,6 +21,15 @@ HOTMART_WEBHOOK_SECRET = os.getenv("HOTMART_WEBHOOK_SECRET", "")
 SEQUENCES_FILE = os.getenv("SEQUENCES_FILE", "./data/automation_sequences.json")
 SCHEDULER_INTERVAL_SECONDS = int(os.getenv("SCHEDULER_INTERVAL_SECONDS", "30"))
 
+# Hotmart API fallback (sales-users)
+HOTMART_CLIENT_ID = os.getenv("HOTMART_CLIENT_ID", "")
+HOTMART_CLIENT_SECRET = os.getenv("HOTMART_CLIENT_SECRET", "")
+HOTMART_BASIC_TOKEN = os.getenv("HOTMART_BASIC_TOKEN", "").replace("Basic ", "").strip()
+HOTMART_AUTH_URL = os.getenv("HOTMART_AUTH_URL", "https://api-sec-vlc.hotmart.com/security/oauth/token")
+HOTMART_API_BASE = os.getenv("HOTMART_API_BASE", "https://developers.hotmart.com/payments/api/v1")
+
+HOTMART_TOKEN_CACHE: Dict[str, Any] = {"access_token": None, "expires_at": 0}
+
 _scheduler_task: Optional[asyncio.Task] = None
 
 
@@ -249,6 +258,86 @@ def _extract_hotmart_fields(payload: Dict[str, Any]) -> Tuple[Optional[str], Opt
     return phone, product, purchase_id, approved_at, event
 
 
+def _hotmart_basic_token() -> str:
+    if HOTMART_BASIC_TOKEN:
+        return HOTMART_BASIC_TOKEN
+    if HOTMART_CLIENT_ID and HOTMART_CLIENT_SECRET:
+        import base64
+        raw = f"{HOTMART_CLIENT_ID}:{HOTMART_CLIENT_SECRET}".encode("utf-8")
+        return base64.b64encode(raw).decode("utf-8")
+    return ""
+
+
+async def _hotmart_access_token() -> Optional[str]:
+    now_ts = int(now_utc().timestamp())
+    cached = HOTMART_TOKEN_CACHE.get("access_token")
+    if cached and HOTMART_TOKEN_CACHE.get("expires_at", 0) > now_ts + 60:
+        return str(cached)
+
+    basic = _hotmart_basic_token()
+    if not basic:
+        return None
+
+    url = f"{HOTMART_AUTH_URL}?grant_type=client_credentials"
+    headers = {"Authorization": f"Basic {basic}", "Accept": "application/json"}
+
+    async with httpx.AsyncClient(timeout=20) as client:
+        r = await client.post(url, headers=headers)
+        if r.status_code >= 400:
+            logger.warning(f"Hotmart auth failed: {r.status_code} {r.text[:200]}")
+            return None
+        data = r.json()
+
+    token = data.get("access_token")
+    expires_in = int(data.get("expires_in") or 3600)
+    if not token:
+        return None
+
+    HOTMART_TOKEN_CACHE["access_token"] = token
+    HOTMART_TOKEN_CACHE["expires_at"] = now_ts + max(60, expires_in - 120)
+    return str(token)
+
+
+async def _phone_from_sales_users(transaction: Optional[str]) -> Optional[str]:
+    if not transaction:
+        return None
+
+    token = await _hotmart_access_token()
+    if not token:
+        return None
+
+    url = f"{HOTMART_API_BASE}/sales/users"
+    headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
+    params = {"transaction": transaction}
+
+    async with httpx.AsyncClient(timeout=20) as client:
+        r = await client.get(url, headers=headers, params=params)
+        if r.status_code >= 400:
+            logger.warning(f"sales-users failed for {transaction}: {r.status_code} {r.text[:200]}")
+            return None
+        data = r.json()
+
+    items = data.get("items") or []
+    for item in items:
+        users = item.get("users") or []
+        # 1) buyer role
+        for entry in users:
+            role = str(entry.get("role") or "").upper()
+            if role == "BUYER":
+                user = entry.get("user") or {}
+                phone = normalize_phone(user.get("cellphone")) or normalize_phone(user.get("phone"))
+                if phone:
+                    return phone
+        # 2) fallback sem role explícita
+        for entry in users:
+            user = entry.get("user") or {}
+            phone = normalize_phone(user.get("cellphone")) or normalize_phone(user.get("phone"))
+            if phone:
+                return phone
+
+    return None
+
+
 async def _send_text(phone: str, text: str) -> Tuple[str, Optional[str]]:
     if not EVOLUTION_API_KEY:
         raise RuntimeError("EVOLUTION_API_KEY ausente")
@@ -472,12 +561,17 @@ async def hotmart_webhook(
 
     phone, product, purchase_id, approved_at, event = _extract_hotmart_fields(payload)
 
+    # fallback oficial: sales-users por transaction
+    if not phone:
+        phone = await _phone_from_sales_users(purchase_id)
+
     if not phone or not product:
-        logger.warning(f"Hotmart payload ignored: missing phone/product | event={event} | keys={list((payload.get('data') or payload).keys())[:15]}")
+        logger.warning(f"Hotmart payload ignored: missing phone/product | event={event} | purchase_id={purchase_id} | keys={list((payload.get('data') or payload).keys())[:15]}")
         return {
             "status": "ignored",
             "reason": "missing_phone_or_product",
             "event": event,
+            "purchase_id": purchase_id,
         }
 
     # processa apenas eventos de compra aprovada
