@@ -17,6 +17,8 @@ import asyncio
 import re
 import os
 import random
+import sqlite3
+import time
 from dotenv import load_dotenv
 from src.marketing_automation import router as marketing_router, start_scheduler, stop_scheduler
 
@@ -100,6 +102,7 @@ app.include_router(marketing_router)
 
 @app.on_event("startup")
 async def _on_startup():
+    init_chat_db()
     start_scheduler()
 
 
@@ -171,36 +174,82 @@ async def evolution_webhook(request: Request, background_tasks: BackgroundTasks)
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
 
-def load_chat_memory() -> dict:
-    os.makedirs(os.path.dirname(MEMORY_FILE), exist_ok=True)
-    if not os.path.exists(MEMORY_FILE):
-        return {}
-    try:
-        with open(MEMORY_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            return data if isinstance(data, dict) else {}
-    except Exception:
-        return {}
-
-
-def save_chat_memory(mem: dict) -> None:
-    os.makedirs(os.path.dirname(MEMORY_FILE), exist_ok=True)
-    with open(MEMORY_FILE, "w", encoding="utf-8") as f:
-        json.dump(mem, f, ensure_ascii=False, indent=2)
+def init_chat_db() -> None:
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS chat_profiles (
+                phone TEXT PRIMARY KEY,
+                name TEXT,
+                language TEXT,
+                last_seen_at TEXT,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS chat_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                phone TEXT NOT NULL,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_chat_messages_phone_created
+            ON chat_messages(phone, id)
+            """
+        )
+        conn.commit()
 
 
 def append_memory(phone: str, role: str, content: str) -> None:
-    mem = load_chat_memory()
-    history = mem.get(phone, [])
-    history.append({"role": role, "content": content})
-    mem[phone] = history[-MAX_HISTORY_MESSAGES:]
-    save_chat_memory(mem)
+    ts = str(time.time())
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            "INSERT INTO chat_messages (phone, role, content, created_at) VALUES (?, ?, ?, ?)",
+            (phone, role, content, ts),
+        )
+        conn.execute(
+            """
+            INSERT INTO chat_profiles (phone, updated_at, last_seen_at)
+            VALUES (?, ?, ?)
+            ON CONFLICT(phone) DO UPDATE SET
+              updated_at=excluded.updated_at,
+              last_seen_at=excluded.last_seen_at
+            """,
+            (phone, ts, ts),
+        )
+
+        # Mantém histórico curto no banco por usuário
+        conn.execute(
+            """
+            DELETE FROM chat_messages
+            WHERE phone = ?
+              AND id NOT IN (
+                SELECT id FROM chat_messages WHERE phone = ? ORDER BY id DESC LIMIT ?
+              )
+            """,
+            (phone, phone, MAX_HISTORY_MESSAGES * 4),
+        )
+        conn.commit()
 
 
 def get_history(phone: str) -> list:
-    mem = load_chat_memory()
-    history = mem.get(phone, [])
-    return history[-MAX_HISTORY_MESSAGES:]
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            "SELECT role, content FROM chat_messages WHERE phone = ? ORDER BY id DESC LIMIT ?",
+            (phone, MAX_HISTORY_MESSAGES),
+        ).fetchall()
+
+    # retorna em ordem cronológica
+    return [{"role": r["role"], "content": r["content"]} for r in reversed(rows)]
 
 
 def extract_text_from_message(message_content: dict) -> str:
