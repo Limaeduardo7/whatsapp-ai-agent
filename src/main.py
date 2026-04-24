@@ -151,8 +151,7 @@ async def healthz():
     }
 
 
-@app.post("/evolution/webhook")
-async def evolution_webhook(request: Request, background_tasks: BackgroundTasks):
+async def _handle_evolution_webhook(request: Request, background_tasks: BackgroundTasks):
     """
     Endpoint para receber webhooks da Evolution API.
     Processa eventos de mensagens e dispara respostas automáticas.
@@ -172,6 +171,16 @@ async def evolution_webhook(request: Request, background_tasks: BackgroundTasks)
     except Exception as e:
         logger.error(f"Error processing webhook: {e}")
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
+@app.post("/evolution/webhook")
+async def evolution_webhook(request: Request, background_tasks: BackgroundTasks):
+    return await _handle_evolution_webhook(request, background_tasks)
+
+
+@app.post("/evolution/webhook/messages-upsert")
+async def evolution_webhook_messages_upsert(request: Request, background_tasks: BackgroundTasks):
+    return await _handle_evolution_webhook(request, background_tasks)
 
 
 def init_chat_db() -> None:
