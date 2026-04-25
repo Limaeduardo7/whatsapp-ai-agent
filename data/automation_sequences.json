@@ -5,20 +5,23 @@
       "name": "PT-BR: A Chave do Poder -> O Efeito Camaleão",
       "language": "pt-BR",
       "goal": "Conduzir comprador da Chave do Poder ao próximo produto lógico da esteira.",
-      "trigger_products": ["a chave do poder", "chave do poder"],
+      "trigger_products": [
+        "a chave do poder",
+        "chave do poder"
+      ],
       "target_product": "O Efeito Camaleão",
       "repeat_last_every_hours": 0,
       "steps": [
         {
-          "text": "Parabéns pela compra da Chave do Poder.\n\nEla trabalha clareza e direção. O próximo passo lógico é adaptação estratégica: O Efeito Camaleão.\n\nhttps://pay.hotmart.com/V95856841S?checkoutMode=10\n\nPara parar, responda SAIR.",
+          "text": "{nome}, boa escolha com A Chave do Poder.\n\nAgora vem o ponto que separa quem só entende de quem influencia de verdade: adaptação estratégica.\n\nPróximo passo: O Efeito Camaleão.\nhttps://pay.hotmart.com/V95856841S?checkoutMode=10\n\nPara parar, responda SAIR.",
           "delay_hours_after": 2
         },
         {
-          "text": "Uma clareza só vira resultado quando você sabe se adaptar ao ambiente.\n\nO Efeito Camaleão aprofunda essa habilidade sem perder identidade.\n\nhttps://pay.hotmart.com/V95856841S?checkoutMode=10\n\nPara parar, responda SAIR.",
+          "text": "Ideia sem influência vira potencial travado.\n\nO Efeito Camaleão te mostra como ajustar linguagem, postura e timing para ser ouvido e gerar resposta real.\n\nEntrar agora:\nhttps://pay.hotmart.com/V95856841S?checkoutMode=10\n\nPara parar, responda SAIR.",
           "delay_hours_after": 24
         },
         {
-          "text": "Último lembrete desta sequência.\n\nDepois da Chave do Poder, O Efeito Camaleão é o próximo passo da esteira Syncronix.\n\nhttps://pay.hotmart.com/V95856841S?checkoutMode=10\n\nPara parar, responda SAIR.",
+          "text": "Fechando esta janela: depois da Chave do Poder, o próximo ganho de resultado está em influência aplicada.\n\nO Efeito Camaleão é essa ponte.\nhttps://pay.hotmart.com/V95856841S?checkoutMode=10\n\nPara parar, responda SAIR.",
           "delay_hours_after": 48
         }
       ]
@@ -28,20 +31,24 @@
       "name": "EN: The Key to Power -> Chameleon Effect",
       "language": "en",
       "goal": "Move The Key to Power buyers to the next logical product.",
-      "trigger_products": ["the key to power", "the key of power", "key to power"],
+      "trigger_products": [
+        "the key to power",
+        "the key of power",
+        "key to power"
+      ],
       "target_product": "Chameleon Effect",
       "repeat_last_every_hours": 0,
       "steps": [
         {
-          "text": "Congrats on getting The Key to Power.\n\nIt builds clarity and direction. The next logical step is strategic adaptation: Chameleon Effect.\n\nhttps://pay.hotmart.com/V97814040Y\n\nTo stop, reply STOP.",
+          "text": "Great move with The Key to Power.\n\nNow comes the split between understanding and real influence: strategic adaptation.\n\nNext step: Chameleon Effect.\nhttps://pay.hotmart.com/V97814040Y\n\nTo stop, reply STOP.",
           "delay_hours_after": 2
         },
         {
-          "text": "Clarity becomes stronger when you can adapt without losing yourself.\n\nChameleon Effect develops that next layer.\n\nhttps://pay.hotmart.com/V97814040Y\n\nTo stop, reply STOP.",
+          "text": "Insight without influence often stays stuck.\n\nChameleon Effect helps you adjust words, posture and timing so people actually respond.\n\nGet access:\nhttps://pay.hotmart.com/V97814040Y\n\nTo stop, reply STOP.",
           "delay_hours_after": 24
         },
         {
-          "text": "Final reminder in this sequence.\n\nAfter The Key to Power, Chameleon Effect is the next step in the Syncronix path.\n\nhttps://pay.hotmart.com/V97814040Y\n\nTo stop, reply STOP.",
+          "text": "Closing this window: after The Key to Power, the next leverage point is applied influence.\n\nChameleon Effect is that bridge.\nhttps://pay.hotmart.com/V97814040Y\n\nTo stop, reply STOP.",
           "delay_hours_after": 48
         }
       ]
@@ -51,20 +58,23 @@
       "name": "ES: La Clave del Poder -> Efecto Camaleón",
       "language": "es",
       "goal": "Conducir comprador de La Clave del Poder al próximo producto lógico.",
-      "trigger_products": ["la clave del poder", "clave del poder"],
+      "trigger_products": [
+        "la clave del poder",
+        "clave del poder"
+      ],
       "target_product": "Efecto Camaleón",
       "repeat_last_every_hours": 0,
       "steps": [
         {
-          "text": "Felicitaciones por tu compra de La Clave del Poder.\n\nTrabaja claridad y dirección. El siguiente paso lógico es adaptación estratégica: Efecto Camaleón.\n\nhttps://pay.hotmart.com/E98979562N\n\nPara parar, responde SALIR.",
+          "text": "Gran decisión con La Clave del Poder.\n\nAhora viene la diferencia entre entender y lograr influencia real: adaptación estratégica.\n\nSiguiente paso: Efecto Camaleón.\nhttps://pay.hotmart.com/E98979562N\n\nPara parar, responde SALIR.",
           "delay_hours_after": 2
         },
         {
-          "text": "La claridad gana fuerza cuando sabes adaptarte sin perder tu identidad.\n\nEfecto Camaleón desarrolla esa próxima capa.\n\nhttps://pay.hotmart.com/E98979562N\n\nPara parar, responde SALIR.",
+          "text": "La idea sin influencia suele quedarse en intención.\n\nEfecto Camaleón te ayuda a ajustar lenguaje, presencia y timing para generar respuesta real.\n\nAcceso:\nhttps://pay.hotmart.com/E98979562N\n\nPara parar, responde SALIR.",
           "delay_hours_after": 24
         },
         {
-          "text": "Último recordatorio de esta secuencia.\n\nDespués de La Clave del Poder, Efecto Camaleón es el próximo paso de Syncronix.\n\nhttps://pay.hotmart.com/E98979562N\n\nPara parar, responde SALIR.",
+          "text": "Cerrando esta ventana: después de La Clave del Poder, el siguiente punto de apalancamiento es influencia aplicada.\n\nEfecto Camaleón es ese puente.\nhttps://pay.hotmart.com/E98979562N\n\nPara parar, responde SALIR.",
           "delay_hours_after": 48
         }
       ]
@@ -74,20 +84,23 @@
       "name": "PT-BR: A Regra da Vida -> O Algoritmo do Universo",
       "language": "pt-BR",
       "goal": "Conduzir comprador da Regra da Vida ao Algoritmo do Universo.",
-      "trigger_products": ["a regra da vida", "regra da vida"],
+      "trigger_products": [
+        "a regra da vida",
+        "regra da vida"
+      ],
       "target_product": "O Algoritmo do Universo",
       "repeat_last_every_hours": 0,
       "steps": [
         {
-          "text": "Boa escolha com A Regra da Vida.\n\nEla organiza comportamento e execução. O próximo passo é entender os padrões por trás dos resultados: O Algoritmo do Universo.\n\nhttps://syncronix.co/ebook-o-algoritmo-do-universo\n\nPara parar, responda SAIR.",
+          "text": "Excelente passo com A Regra da Vida.\n\nVocê já organizou mente e comportamento. Agora falta ler os padrões invisíveis que aceleram ou travam seus resultados.\n\nPróximo passo: O Algoritmo do Universo.\nhttps://syncronix.co/ebook-o-algoritmo-do-universo\n\nPara parar, responda SAIR.",
           "delay_hours_after": 4
         },
         {
-          "text": "Disciplina sem leitura correta pode virar esforço mal direcionado.\n\nO Algoritmo do Universo ajuda a agir com mais contexto e precisão.\n\nhttps://syncronix.co/ebook-o-algoritmo-do-universo\n\nPara parar, responda SAIR.",
+          "text": "Muita gente disciplina a rotina, mas continua no mesmo teto de resultado.\n\nO Algoritmo do Universo mostra onde você está perdendo força sem perceber.\n\nAcesse:\nhttps://syncronix.co/ebook-o-algoritmo-do-universo\n\nPara parar, responda SAIR.",
           "delay_hours_after": 24
         },
         {
-          "text": "Encerrando esta sequência.\n\nDepois da Regra da Vida, o próximo passo lógico é O Algoritmo do Universo.\n\nhttps://syncronix.co/ebook-o-algoritmo-do-universo\n\nPara parar, responda SAIR.",
+          "text": "Último aviso desta sequência: se você já domina a base mental, o próximo avanço vem de calibrar direção e leitura de realidade.\n\nhttps://syncronix.co/ebook-o-algoritmo-do-universo\n\nPara parar, responda SAIR.",
           "delay_hours_after": 48
         }
       ]
@@ -97,20 +110,23 @@
       "name": "EN: The Rule of Life -> The Algorithm of the Universe",
       "language": "en",
       "goal": "Move Rule of Life buyers to The Algorithm of the Universe.",
-      "trigger_products": ["the rule of life", "rule of life"],
+      "trigger_products": [
+        "the rule of life",
+        "rule of life"
+      ],
       "target_product": "The Algorithm of the Universe",
       "repeat_last_every_hours": 0,
       "steps": [
         {
-          "text": "Good choice with The Rule of Life.\n\nIt organizes behavior and execution. The next step is reading the patterns behind results: The Algorithm of the Universe.\n\nhttps://syncronix.co/ebook-o-algoritmo-do-universo/\n\nTo stop, reply STOP.",
+          "text": "Great step with The Rule of Life.\n\nYou already structured behavior and mindset. The next jump is reading the hidden patterns that speed up or block results.\n\nNext step: The Algorithm of the Universe.\nhttps://syncronix.co/ebook-o-algoritmo-do-universo/\n\nTo stop, reply STOP.",
           "delay_hours_after": 4
         },
         {
-          "text": "Discipline without the right reading can become misplaced effort.\n\nThe Algorithm of the Universe helps you act with more context and precision.\n\nhttps://syncronix.co/ebook-o-algoritmo-do-universo/\n\nTo stop, reply STOP.",
+          "text": "Many people stay disciplined but keep hitting the same ceiling.\n\nThe Algorithm of the Universe helps you spot where energy and decisions are leaking.\n\nAccess:\nhttps://syncronix.co/ebook-o-algoritmo-do-universo/\n\nTo stop, reply STOP.",
           "delay_hours_after": 24
         },
         {
-          "text": "Closing this sequence.\n\nAfter The Rule of Life, the next logical step is The Algorithm of the Universe.\n\nhttps://syncronix.co/ebook-o-algoritmo-do-universo/\n\nTo stop, reply STOP.",
+          "text": "Final message in this sequence: once mental base is built, growth comes from better calibration and pattern reading.\n\nhttps://syncronix.co/ebook-o-algoritmo-do-universo/\n\nTo stop, reply STOP.",
           "delay_hours_after": 48
         }
       ]
@@ -120,20 +136,23 @@
       "name": "ES: La Regla de la Vida -> El Algoritmo del Universo",
       "language": "es",
       "goal": "Conducir comprador de La Regla de la Vida al Algoritmo del Universo.",
-      "trigger_products": ["la regla de la vida", "regla de la vida"],
+      "trigger_products": [
+        "la regla de la vida",
+        "regla de la vida"
+      ],
       "target_product": "El Algoritmo del Universo",
       "repeat_last_every_hours": 0,
       "steps": [
         {
-          "text": "Buena elección con La Regla de la Vida.\n\nOrdena conducta y ejecución. El siguiente paso es leer los patrones detrás de tus resultados: El Algoritmo del Universo.\n\nhttps://syncronix.co/ebook-el-algoritmo-del-universo/\n\nPara parar, responde SALIR.",
+          "text": "Gran paso con La Regla de la Vida.\n\nYa ordenaste mente y conducta. El siguiente salto es leer los patrones invisibles que aceleran o frenan tus resultados.\n\nSiguiente paso: El Algoritmo del Universo.\nhttps://syncronix.co/ebook-el-algoritmo-del-universo/\n\nPara parar, responde SALIR.",
           "delay_hours_after": 4
         },
         {
-          "text": "Disciplina sin lectura correcta puede convertirse en esfuerzo mal dirigido.\n\nEl Algoritmo del Universo te ayuda a actuar con más contexto y precisión.\n\nhttps://syncronix.co/ebook-el-algoritmo-del-universo/\n\nPara parar, responde SALIR.",
+          "text": "Mucha gente mantiene disciplina, pero sigue en el mismo techo.\n\nEl Algoritmo del Universo te muestra dónde estás perdiendo fuerza sin notarlo.\n\nAcceso:\nhttps://syncronix.co/ebook-el-algoritmo-del-universo/\n\nPara parar, responde SALIR.",
           "delay_hours_after": 24
         },
         {
-          "text": "Cerrando esta secuencia.\n\nDespués de La Regla de la Vida, el próximo paso lógico es El Algoritmo del Universo.\n\nhttps://syncronix.co/ebook-el-algoritmo-del-universo/\n\nPara parar, responde SALIR.",
+          "text": "Último mensaje de esta secuencia: cuando la base mental está lista, el avance viene de calibrar dirección y lectura de realidad.\n\nhttps://syncronix.co/ebook-el-algoritmo-del-universo/\n\nPara parar, responde SALIR.",
           "delay_hours_after": 48
         }
       ]
@@ -143,20 +162,23 @@
       "name": "PT-BR: O Algoritmo do Universo -> Estado Mestre",
       "language": "pt-BR",
       "goal": "Conduzir comprador do Algoritmo do Universo para Estado Mestre.",
-      "trigger_products": ["o algoritmo do universo", "algoritmo do universo"],
+      "trigger_products": [
+        "o algoritmo do universo",
+        "algoritmo do universo"
+      ],
       "target_product": "Estado Mestre",
       "repeat_last_every_hours": 0,
       "steps": [
         {
-          "text": "Excelente avançar com O Algoritmo do Universo.\n\nDepois de ler padrões, o próximo passo é sustentar um estado interno mais estável: Estado Mestre.\n\nhttps://pay.hotmart.com/J103587379L\n\nPara parar, responda SAIR.",
+          "text": "Ótimo avanço com O Algoritmo do Universo.\n\nAgora o jogo é sustentar alta performance sem oscilação emocional.\n\nPróximo passo: Estado Mestre.\nhttps://pay.hotmart.com/J103587379L\n\nPara parar, responda SAIR.",
           "delay_hours_after": 6
         },
         {
-          "text": "Estratégia falha quando o estado interno oscila demais.\n\nEstado Mestre trabalha essa base para decisão e execução com mais firmeza.\n\nhttps://pay.hotmart.com/J103587379L\n\nPara parar, responda SAIR.",
+          "text": "Conhecimento estratégico perde valor quando o estado interno cai sob pressão.\n\nEstado Mestre te dá estabilidade para decidir melhor nos momentos críticos.\n\nEntrar agora:\nhttps://pay.hotmart.com/J103587379L\n\nPara parar, responda SAIR.",
           "delay_hours_after": 24
         },
         {
-          "text": "Último lembrete desta sequência.\n\nDepois do Algoritmo do Universo, Estado Mestre é o próximo passo da esteira.\n\nhttps://pay.hotmart.com/J103587379L\n\nPara parar, responda SAIR.",
+          "text": "Fechando esta sequência: depois do Algoritmo, o próximo multiplicador é consistência emocional.\n\nEstado Mestre é essa base.\nhttps://pay.hotmart.com/J103587379L\n\nPara parar, responda SAIR.",
           "delay_hours_after": 48
         }
       ]
@@ -166,20 +188,23 @@
       "name": "EN: The Algorithm of the Universe -> Master State",
       "language": "en",
       "goal": "Move Algorithm buyers to Master State.",
-      "trigger_products": ["the algorithm of the universe", "algorithm of the universe"],
+      "trigger_products": [
+        "the algorithm of the universe",
+        "algorithm of the universe"
+      ],
       "target_product": "Master State",
       "repeat_last_every_hours": 0,
       "steps": [
         {
-          "text": "Great step with The Algorithm of the Universe.\n\nAfter reading patterns, the next step is holding a steadier internal state: Master State.\n\nhttps://pay.hotmart.com/R103597382K\n\nTo stop, reply STOP.",
+          "text": "Strong move with The Algorithm of the Universe.\n\nNow the game is sustaining high performance without emotional swings.\n\nNext step: Master State.\nhttps://pay.hotmart.com/R103597382K\n\nTo stop, reply STOP.",
           "delay_hours_after": 6
         },
         {
-          "text": "Strategy weakens when your internal state keeps shifting.\n\nMaster State develops that base for clearer decisions and execution.\n\nhttps://pay.hotmart.com/R103597382K\n\nTo stop, reply STOP.",
+          "text": "Strategy loses power when your internal state drops under pressure.\n\nMaster State builds stability for sharper decisions in critical moments.\n\nGet access:\nhttps://pay.hotmart.com/R103597382K\n\nTo stop, reply STOP.",
           "delay_hours_after": 24
         },
         {
-          "text": "Final reminder in this sequence.\n\nAfter The Algorithm of the Universe, Master State is the next Syncronix step.\n\nhttps://pay.hotmart.com/R103597382K\n\nTo stop, reply STOP.",
+          "text": "Closing this sequence: after Algorithm, your next multiplier is emotional consistency.\n\nMaster State is that foundation.\nhttps://pay.hotmart.com/R103597382K\n\nTo stop, reply STOP.",
           "delay_hours_after": 48
         }
       ]
@@ -189,20 +214,23 @@
       "name": "ES: El Algoritmo del Universo -> Estado Maestro",
       "language": "es",
       "goal": "Conducir comprador del Algoritmo del Universo a Estado Maestro.",
-      "trigger_products": ["el algoritmo del universo", "algoritmo del universo"],
+      "trigger_products": [
+        "el algoritmo del universo",
+        "algoritmo del universo"
+      ],
       "target_product": "Estado Maestro",
       "repeat_last_every_hours": 0,
       "steps": [
         {
-          "text": "Excelente avance con El Algoritmo del Universo.\n\nDespués de leer patrones, el siguiente paso es sostener un estado interno más estable: Estado Maestro.\n\nhttps://pay.hotmart.com/N103597337N\n\nPara parar, responde SALIR.",
+          "text": "Excelente avance con El Algoritmo del Universo.\n\nAhora el juego es sostener rendimiento alto sin oscilaciones emocionales.\n\nSiguiente paso: Estado Maestro.\nhttps://pay.hotmart.com/N103597337N\n\nPara parar, responde SALIR.",
           "delay_hours_after": 6
         },
         {
-          "text": "La estrategia pierde fuerza cuando tu estado interno oscila demasiado.\n\nEstado Maestro trabaja esa base para decidir y ejecutar mejor.\n\nhttps://pay.hotmart.com/N103597337N\n\nPara parar, responde SALIR.",
+          "text": "La estrategia pierde fuerza cuando tu estado interno cae bajo presión.\n\nEstado Maestro construye estabilidad para decidir con claridad en momentos críticos.\n\nAcceso:\nhttps://pay.hotmart.com/N103597337N\n\nPara parar, responde SALIR.",
           "delay_hours_after": 24
         },
         {
-          "text": "Último recordatorio de esta secuencia.\n\nDespués de El Algoritmo del Universo, Estado Maestro es el próximo paso de Syncronix.\n\nhttps://pay.hotmart.com/N103597337N\n\nPara parar, responde SALIR.",
+          "text": "Cerrando esta secuencia: después del Algoritmo, tu siguiente multiplicador es la consistencia emocional.\n\nEstado Maestro es esa base.\nhttps://pay.hotmart.com/N103597337N\n\nPara parar, responde SALIR.",
           "delay_hours_after": 48
         }
       ]
@@ -212,20 +240,23 @@
       "name": "PT-BR: Energy Hack 8D -> Manual Avançado do Salto Quântico",
       "language": "pt-BR",
       "goal": "Conduzir comprador do Energy Hack 8D ao Manual Avançado do Salto Quântico.",
-      "trigger_products": ["energy hack 8d", "energy hack"],
+      "trigger_products": [
+        "energy hack 8d",
+        "energy hack"
+      ],
       "target_product": "Manual Avançado do Salto Quântico",
       "repeat_last_every_hours": 0,
       "steps": [
         {
-          "text": "Boa decisão com o Energy Hack 8D.\n\nEnergia ajuda na execução. O próximo passo é direcionar salto de percepção e decisão: Manual Avançado do Salto Quântico.\n\nhttps://pay.hotmart.com/P95880111J\n\nPara parar, responda SAIR.",
+          "text": "Boa decisão com Energy Hack 8D.\n\nVocê já ativou energia. Agora precisa de direção para transformar impulso em resultado concreto.\n\nPróximo passo: Manual Avançado do Salto Quântico.\nhttps://pay.hotmart.com/P95880111J\n\nPara parar, responda SAIR.",
           "delay_hours_after": 6
         },
         {
-          "text": "Energia sem direção pode virar esforço disperso.\n\nO Manual Avançado do Salto Quântico aprofunda direção, mudança interna e ação consciente.\n\nhttps://pay.hotmart.com/P95880111J\n\nPara parar, responda SAIR.",
+          "text": "Energia sem método vira intensidade sem progresso.\n\nO Manual do Salto Quântico organiza foco, decisão e execução para acelerar sua virada.\n\nAcesse:\nhttps://pay.hotmart.com/P95880111J\n\nPara parar, responda SAIR.",
           "delay_hours_after": 24
         },
         {
-          "text": "Encerrando esta sequência.\n\nDepois do Energy Hack 8D, o próximo passo lógico é o Manual Avançado do Salto Quântico.\n\nhttps://pay.hotmart.com/P95880111J\n\nPara parar, responda SAIR.",
+          "text": "Última mensagem desta sequência: depois do Energy Hack, o próximo ganho vem de método aplicado.\n\nManual Avançado do Salto Quântico:\nhttps://pay.hotmart.com/P95880111J\n\nPara parar, responda SAIR.",
           "delay_hours_after": 48
         }
       ]
@@ -235,20 +266,23 @@
       "name": "EN: Energy Hack 8D -> Quantum Leap Manual",
       "language": "en",
       "goal": "Move Energy Hack buyers to Quantum Leap Manual.",
-      "trigger_products": ["energy hack 8d", "energy hack"],
+      "trigger_products": [
+        "energy hack 8d",
+        "energy hack"
+      ],
       "target_product": "Quantum Leap Manual",
       "repeat_last_every_hours": 0,
       "steps": [
         {
-          "text": "Good decision with Energy Hack 8D.\n\nEnergy supports execution. The next step is directing perception and decision: Quantum Leap Manual.\n\nhttps://pay.hotmart.com/V97813128V\n\nTo stop, reply STOP.",
+          "text": "Great choice with Energy Hack 8D.\n\nYou activated energy. Now you need direction to turn momentum into concrete results.\n\nNext step: Quantum Leap Manual.\nhttps://pay.hotmart.com/V97813128V\n\nTo stop, reply STOP.",
           "delay_hours_after": 6
         },
         {
-          "text": "Energy without direction can become scattered effort.\n\nQuantum Leap Manual develops direction, internal shift and conscious action.\n\nhttps://pay.hotmart.com/V97813128V\n\nTo stop, reply STOP.",
+          "text": "Energy without method becomes intensity without progress.\n\nQuantum Leap Manual structures focus, decisions and execution for faster breakthroughs.\n\nAccess:\nhttps://pay.hotmart.com/V97813128V\n\nTo stop, reply STOP.",
           "delay_hours_after": 24
         },
         {
-          "text": "Closing this sequence.\n\nAfter Energy Hack 8D, the next logical step is Quantum Leap Manual.\n\nhttps://pay.hotmart.com/V97813128V\n\nTo stop, reply STOP.",
+          "text": "Final message in this sequence: after Energy Hack, your next gain comes from applied method.\n\nQuantum Leap Manual:\nhttps://pay.hotmart.com/V97813128V\n\nTo stop, reply STOP.",
           "delay_hours_after": 48
         }
       ]
@@ -258,20 +292,23 @@
       "name": "ES: Energy Hack 8D -> Manual Avanzado del Salto Cuántico",
       "language": "es",
       "goal": "Conducir comprador de Energy Hack 8D al Manual Avanzado del Salto Cuántico.",
-      "trigger_products": ["energy hack 8d", "energy hack"],
+      "trigger_products": [
+        "energy hack 8d",
+        "energy hack"
+      ],
       "target_product": "Manual Avanzado del Salto Cuántico",
       "repeat_last_every_hours": 0,
       "steps": [
         {
-          "text": "Buena decisión con Energy Hack 8D.\n\nLa energía apoya la ejecución. El próximo paso es dirigir percepción y decisión: Manual Avanzado del Salto Cuántico.\n\nhttps://pay.hotmart.com/E98981497I\n\nPara parar, responde SALIR.",
+          "text": "Buena decisión con Energy Hack 8D.\n\nYa activaste energía. Ahora necesitas dirección para convertir impulso en resultados concretos.\n\nSiguiente paso: Manual Avanzado del Salto Cuántico.\nhttps://pay.hotmart.com/E98981497I\n\nPara parar, responde SALIR.",
           "delay_hours_after": 6
         },
         {
-          "text": "Energía sin dirección puede convertirse en esfuerzo disperso.\n\nEl Manual Avanzado del Salto Cuántico profundiza dirección, cambio interno y acción consciente.\n\nhttps://pay.hotmart.com/E98981497I\n\nPara parar, responde SALIR.",
+          "text": "Energía sin método se convierte en intensidad sin progreso.\n\nEl Manual del Salto Cuántico ordena foco, decisión y ejecución para acelerar tu cambio.\n\nAcceso:\nhttps://pay.hotmart.com/E98981497I\n\nPara parar, responde SALIR.",
           "delay_hours_after": 24
         },
         {
-          "text": "Cerrando esta secuencia.\n\nDespués de Energy Hack 8D, el próximo paso lógico es el Manual Avanzado del Salto Cuántico.\n\nhttps://pay.hotmart.com/E98981497I\n\nPara parar, responde SALIR.",
+          "text": "Último mensaje de esta secuencia: después de Energy Hack, el siguiente avance viene con método aplicado.\n\nManual Avanzado del Salto Cuántico:\nhttps://pay.hotmart.com/E98981497I\n\nPara parar, responde SALIR.",
           "delay_hours_after": 48
         }
       ]
