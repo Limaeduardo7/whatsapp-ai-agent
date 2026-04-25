@@ -1,27 +1,14 @@
-# Hotmart -> WhatsApp Marketing Automation (Syncronix)
+# Automacao Hotmart para WhatsApp
 
-## Objetivo
-Quando uma compra for aprovada na Hotmart:
-1. identificar comprador (telefone + produto),
-2. iniciar sequência de cross-sell no WhatsApp,
-3. parar a sequência quando houver nova compra,
-4. iniciar nova sequência para o próximo produto.
-
-## Arquitetura
+## Fluxo
 
 ```text
-Hotmart Webhook (purchase approved)
+Hotmart purchase approved
   -> POST /marketing/hotmart/webhook
-  -> normaliza telefone + produto
-  -> grava purchase no SQLite
-  -> seleciona sequência por produto gatilho
-  -> atualiza estado do cliente
-
-Scheduler interno (a cada N segundos)
-  -> encontra clientes com next_send_at vencido
-  -> envia mensagem via Evolution API
-  -> avança step e agenda próxima mensagem
-  -> ao final: waiting_purchase (ou repeat_last)
+  -> extrai telefone, produto e transacao
+  -> registra compra no SQLite
+  -> seleciona sequencia por produto
+  -> scheduler envia proximos passos via Evolution API
 ```
 
 ## Endpoints
@@ -30,35 +17,30 @@ Scheduler interno (a cada N segundos)
 - `POST /marketing/automation/run-once`
 - `GET /marketing/automation/stats`
 
-## Persistência (SQLite)
+As rotas `/automation/*` exigem `ADMIN_API_KEY`.
 
-- `marketing_customers`
-- `marketing_purchases`
-- `marketing_messages`
+## Sequencias
 
-## Arquivo de Sequências
+As sequencias ficam em `data/automation_sequences.json`.
 
-`data/automation_sequences.json`
+Campos:
 
-Cada sequência contém:
 - `id`
-- `trigger_products` (produtos que disparam essa jornada)
+- `trigger_products`
 - `target_product`
-- `steps[]` com `text` e `delay_hours_after`
-- `repeat_last_every_hours` (opcional)
+- `steps[].text`
+- `steps[].delay_hours_after`
+- `repeat_last_every_hours`
 
-## Configuração obrigatória (.env)
+## Regras operacionais
 
-- `EVOLUTION_BASE_URL`
-- `EVOLUTION_INSTANCE`
-- `EVOLUTION_API_KEY`
-- `HOTMART_WEBHOOK_SECRET`
-- `SEQUENCES_FILE`
+- Compra duplicada e deduplicada por `purchase_id + phone + product`.
+- Cada contato recebe no maximo 1 mensagem de marketing por dia.
+- Se uma sequencia terminar, o contato fica em `waiting_purchase` ou repete o ultimo passo quando `repeat_last_every_hours` estiver configurado.
 
-## Observações de produção
+## Producao
 
-1. **Compliance LGPD / opt-out**: inclua comando de saída (ex: "SAIR").
-2. **Frequência**: limite mensagens para evitar bloqueio por spam.
-3. **Webhook validation**: mantenha `HOTMART_WEBHOOK_SECRET` ativo.
-4. **Monitoramento**: alerte em falha de envio (>X tentativas).
-5. **Idempotência**: `purchase_id + phone + product` já está deduplicado.
+- Configure `HOTMART_WEBHOOK_SECRET`.
+- Configure `ADMIN_API_KEY`.
+- Monitore falhas de envio para Evolution API.
+- Para escalar horizontalmente, tire o scheduler do processo web e use fila/worker dedicado.

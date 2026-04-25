@@ -1,154 +1,105 @@
-# 🤖 WhatsApp AI Agent
+# WhatsApp AI Agent
 
-Agente de IA para atendimento comercial no WhatsApp, integrando Evolution API com LLMs (Kimi 2.5 via NVIDIA).
+Agente de atendimento comercial para WhatsApp usando Evolution API, FastAPI, LLM OpenAI-compatible e automacao Hotmart.
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688.svg)](https://fastapi.tiangolo.com/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+## Funcionalidades
 
-## 🏗️ Arquitetura
+- Recebe webhooks da Evolution API.
+- Responde leads com um LLM configuravel.
+- Mantem memoria curta e resumo por contato em SQLite.
+- Divide respostas em baloes curtos e simula digitacao.
+- Registra opt-out quando o contato pede para parar.
+- Deduplica mensagens recebidas para evitar resposta duplicada.
+- Processa compras aprovadas da Hotmart e dispara sequencias de cross-sell.
+- Expoe endpoints de saude e estatisticas operacionais protegidas.
 
+## Arquitetura
+
+```text
+WhatsApp -> Evolution API -> FastAPI webhook -> LLM -> Evolution API -> WhatsApp
+                                  |
+                                  +-> SQLite
+                                  +-> Hotmart marketing scheduler
 ```
-┌─────────────┐      ┌──────────────┐      ┌─────────────────┐      ┌─────────────┐
-│   Lead      │──────▶│  Evolution   │──────▶│   Bridge        │──────▶│   Kimi 2.5  │
-│  WhatsApp   │◀──────│   API        │◀─────│  (FastAPI)      │◀─────│   (NVIDIA)  │
-└─────────────┘      └──────────────┘      └─────────────────┘      └─────────────┘
-                                                    │
-                         ┌──────────────────────────┼──────────────────────────┐
-                         │                          │                          ▼
-                    ┌────▼────┐              ┌──────▼──────┐           ┌─────────────┐
-                    │ SQLite  │              │    JSON     │           │   Notion    │
-                    │  (n8n)  │              │  (memória)  │           │  (Pipeline) │
-                    └─────────┘              └─────────────┘           └─────────────┘
-```
 
-## ✨ Funcionalidades
+Componentes principais:
 
-- 🤖 **Respostas Inteligentes** via Kimi 2.5 (Kimi K2.5 da NVIDIA)
-- 💬 **Mensagens Humanizadas** — fragmentadas em balões curtos
-- 🔊 **STT/Vision** — transcrição de áudio e análise de imagens via Gemini
-- 📄 **PDF de Orçamento** — geração automática com FPDF
-- 🗂️ **Pipeline Notion** — integração com CRM
-- ⏸️ **Pausa Inteligente** — para quando humano intervém
-- 🎯 **Detecção de Intenção** — classifica leads automaticamente
-- 🔄 **Follow-up Automático** — para leads sem resposta
+- `src/main.py`: app FastAPI, health checks e webhook Evolution.
+- `src/marketing_automation.py`: webhook Hotmart e scheduler de marketing.
+- `src/config.py`: configuracao via variaveis de ambiente.
+- `src/services.py`: clientes LLM e Evolution.
+- `src/repositories.py`: persistencia SQLite.
+- `src/domain.py`: helpers de dominio, como telefone e mascaramento.
 
-## 🚀 Quick Start
-
-### 1. Clone o repositório
+## Quick Start
 
 ```bash
-git clone https://github.com/seu-usuario/whatsapp-ai-agent.git
-cd whatsapp-ai-agent
-```
-
-### 2. Configure o ambiente
-
-```bash
-# Crie e env ative ambiente virtual
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# ou
-venv\Scripts\activate  # Windows
-
-# Instale dependências
-pip install -r requirements.txt
-
-# Configure variáveis de ambiente
-cp .env.example .env
-# Edite .env com suas credenciais
-```
-
-### 3. Configure a Evolution API
-
-Siga a documentação da [Evolution API](https://github.com/EvolutionAPI/evolution-api) para deploy.
-
-### 4. Configure o webhook
-
-```bash
-curl -X POST "$EVOLUTION_BASE_URL/webhook/set" \
-  -H "Content-Type: application/json" \
-  -H "apikey: $EVOLUTION_API_KEY" \
-  -d '{
-    "webhook": {
-      "url": "http://seu-servidor:8001/evolution/webhook",
-      "events": ["MESSAGES_UPSERT"]
-    }
-  }'
-```
-
-### 5. Execute
-
-```bash
-# Desenvolvimento
+python -m venv .venv
+.venv\Scripts\activate
+python -m pip install -r requirements.txt
+copy .env.example .env
 python -m uvicorn src.main:app --reload --port 8001
-
-# Produção
-python -m uvicorn src.main:app --host 0.0.0.0 --port 8001
 ```
 
-## ⚙️ Configuração via Systemd
+Linux/macOS:
 
 ```bash
-sudo cp config/evolution-bridge.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable evolution-bridge.service
-sudo systemctl start evolution-bridge.service
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+cp .env.example .env
+python -m uvicorn src.main:app --reload --port 8001
 ```
 
-## 📁 Estrutura do Projeto
+## Configuracao
 
-```
-whatsapp-ai-agent/
-├── src/
-│   ├── main.py              # FastAPI app principal
-│   ├── handlers/            # Handlers de mensagens
-│   ├── services/            # Serviços (LLM, Evolution, etc)
-│   └── utils/               # Utilitários
-├── config/
-│   └── evolution-bridge.service  # Systemd unit
-├── docs/
-│   └── AGENT_CONFIG.md      # Configuração completa
-├── data/                    # Persistência (criado automaticamente)
-├── logs/                    # Logs (criado automaticamente)
-├── .env.example             # Template de variáveis
-├── requirements.txt         # Dependências Python
-└── README.md                # Este arquivo
-```
+Variaveis essenciais:
 
-## 🛠️ Troubleshooting
+- `EVOLUTION_BASE_URL`
+- `EVOLUTION_INSTANCE`
+- `EVOLUTION_API_KEY`
+- `LLM_API_URL`
+- `LLM_API_KEY`
+- `LLM_MODEL_ID`
+- `ADMIN_API_KEY`
+- `HOTMART_WEBHOOK_SECRET`
+- `EVOLUTION_WEBHOOK_SECRET`
 
-### Bot não responde
+Rotas administrativas exigem `ADMIN_API_KEY` no header `x-admin-api-key` ou `Authorization: Bearer ...`.
+
+Quando `EVOLUTION_WEBHOOK_SECRET` estiver configurado, os webhooks da Evolution devem enviar o header `x-evolution-webhook-secret`.
+
+## Endpoints
+
+- `GET /`: health check simples.
+- `GET /healthz`: readiness com validacao basica de configuracao.
+- `POST /evolution/webhook`: webhook Evolution.
+- `POST /evolution/webhook/messages-upsert`: rota alternativa para eventos `messages-upsert`.
+- `POST /marketing/hotmart/webhook`: webhook Hotmart.
+- `POST /marketing/automation/run-once`: executa scheduler uma vez, protegido por admin key.
+- `GET /marketing/automation/stats`: estatisticas, protegido por admin key.
+
+## Docker
 
 ```bash
-# Verificar status
-systemctl status evolution-bridge.service
-
-# Verificar logs
-journalctl -u evolution-bridge.service -f
-
-# Verificar se webhooks chegam
-tail -f logs/app.log | grep webhook
+docker compose up --build
 ```
 
-### Redis disconnected
+## Testes
 
 ```bash
-# Reiniciar serviços Docker
-docker service update --force automacoes_evolution-api-redis
-docker service update --force automacoes_evolution-api
+python -m pip install -e ".[dev]"
+ruff check src tests
+pytest
 ```
 
-## 📚 Documentação
+## Producao
 
-- [Configuração Completa](docs/AGENT_CONFIG.md)
-- [API Evolution](https://docs.evolution-api.com/)
-- [Kimi 2.5 (NVIDIA)](https://build.nvidia.com/moonshotai/kimi-k2-5)
+Recomendacoes:
 
-## 📝 Licença
-
-MIT License — veja [LICENSE](LICENSE) para detalhes.
-
----
-
-<p align="center">Desenvolvido com 🦞 pela Meraki Group</p>
+- Use usuario dedicado no systemd, nunca `root`.
+- Configure `ADMIN_API_KEY`, `HOTMART_WEBHOOK_SECRET` e `EVOLUTION_WEBHOOK_SECRET`.
+- Restrinja `CORS_ORIGINS`.
+- Use Postgres quando o volume crescer ou quando houver multiplos workers.
+- Execute o scheduler em processo separado se escalar horizontalmente.
+- Monitore erros de Evolution API, LLM e Hotmart com logs estruturados.

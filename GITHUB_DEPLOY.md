@@ -1,80 +1,38 @@
-# 🚀 Deploy no GitHub
+# GitHub e Deploy
 
-## Status
-✅ **DEPLOY CONCLUÍDO**
-- Repositório: https://github.com/Limaeduardo7/whatsapp-ai-agent
-- Branch: main
-- Visibilidade: Pública
+Repositorio: https://github.com/Limaeduardo7/whatsapp-ai-agent
 
-## Opção 1: Completar via Script (Rápido)
+## Publicacao
 
-1. Crie um token no GitHub: https://github.com/settings/tokens
-   - Scopes necessários: `repo`, `workflow`
+Use git/gh autenticado localmente:
 
-2. Execute:
-   ```bash
-   cd /root/clawd/projects/whatsapp-ai-agent
-   ./scripts/setup-github.sh ghp_SEU_TOKEN_AQUI
-   ```
-
-## Opção 2: Manual (Via Interface Web)
-
-1. Acesse: https://github.com/new
-   - Nome: `whatsapp-ai-agent`
-   - Description: Opcional
-   - Público
-   - NÃO inicialize com README
-
-2. Execute no terminal:
-   ```bash
-   cd /root/clawd/projects/whatsapp-ai-agent
-   
-   # Configure remote
-   git remote add origin https://github.com/Limaeduardo7/whatsapp-ai-agent.git
-   git branch -M main
-   
-   # Push
-   git push -u origin main
-   ```
-
-## Estrutura do Projeto
-
-```
-whatsapp-ai-agent/
-├──📄 README.md              # Documentação principal
-├──📄 LICENSE                # MIT License
-├──📄 .env.example           # Template de configuração
-├──📄 requirements.txt       # Dependências Python
-├──📄 GITHUB_DEPLOY.md       # Este arquivo
-│
-├──📁 src/
-│   └── main.py              # FastAPI app principal
-│
-├──📁 config/
-│   └── evolution-bridge.service  # Systemd unit
-│
-├──📁 docs/
-│   └── AGENT_CONFIG.md      # Configuração completa
-│
-├──📁 scripts/
-│   ├── setup-github.sh      # Script setup GitHub
-│   └── deploy.sh            # Script deploy local
-│
-└──📁 {data,logs}/           # Diretórios de persistência
+```bash
+git status
+git add .
+git commit -m "describe change"
+git push -u origin branch-name
 ```
 
-## Pós-Deploy
+Evite salvar tokens GitHub em arquivos como `~/.git-credentials`.
 
-Após push no GitHub:
-1. Adicione as secrets no repo (Settings > Secrets):
-   - EVOLUTION_API_KEY
-   - LLM_API_KEY
-   - Etc (veja .env.example)
+## CI
 
-2. Configure GitHub Actions (opcional)
-3. Defina branch main como default
+O workflow em `.github/workflows/ci.yml` executa:
 
----
+- instalacao do pacote com dependencias de desenvolvimento,
+- `ruff check src tests`,
+- `pytest`.
 
-**Data de criação:** 2026-04-15
-**Local:** `/root/clawd/projects/whatsapp-ai-agent`
+## Deploy local com systemd
+
+```bash
+sudo ./scripts/deploy.sh
+```
+
+O script cria o usuario de sistema `whatsapp-agent`, instala dependencias e registra `config/evolution-bridge.service`.
+
+## Deploy com Docker
+
+```bash
+docker compose up --build
+```

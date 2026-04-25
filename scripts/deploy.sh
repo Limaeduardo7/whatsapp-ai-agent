@@ -1,52 +1,43 @@
 #!/bin/bash
-# Script de deploy do WhatsApp AI Agent
+# Deploy local do WhatsApp AI Agent com systemd.
 # Uso: sudo ./scripts/deploy.sh
 
-set -e
+set -euo pipefail
 
-echo "🤖 WhatsApp AI Agent - Deploy"
-echo "================================"
+echo "WhatsApp AI Agent - Deploy"
 
-# Verificar se está no diretório correto
 if [ ! -f "src/main.py" ]; then
-    echo "❌ Erro: Execute este script da raiz do projeto"
+    echo "Erro: execute este script da raiz do projeto"
     exit 1
 fi
 
-# Criar diretórios de dados
+if [ ! -f ".env" ]; then
+    echo "Erro: .env nao encontrado. Copie .env.example para .env e configure as credenciais."
+    exit 1
+fi
+
 mkdir -p data logs
 
-echo "📦 Instalando dependências..."
-pip install -q -r requirements.txt
-
-echo "🔧 Configurando serviço systemd..."
-if [ -f ".env" ]; then
-    sudo cp config/evolution-bridge.service /etc/systemd/system/
-    sudo systemctl daemon-reload
-    sudo systemctl enable evolution-bridge.service
-    echo "✅ Serviço configurado"
-else
-    echo "⚠️ .env não encontrado. Copie .env.example para .env e configure"
-    exit 1
+if ! id -u whatsapp-agent >/dev/null 2>&1; then
+    useradd --system --no-create-home --shell /usr/sbin/nologin whatsapp-agent
 fi
 
-echo "🚀 Iniciando serviço..."
-sudo systemctl restart evolution-bridge.service
+chown -R whatsapp-agent:whatsapp-agent data logs
 
-# Aguardar inicialização
+python3 -m pip install -q -r requirements.txt
+
+cp config/evolution-bridge.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable evolution-bridge.service
+systemctl restart evolution-bridge.service
+
 sleep 2
 
-# Verificar status
 if systemctl is-active --quiet evolution-bridge.service; then
-    echo "✅ Serviço ativo!"
+    echo "Servico ativo."
     systemctl status evolution-bridge.service --no-pager
-    echo ""
-    echo "📋 Comandos úteis:"
-    echo "  Logs: sudo journalctl -u evolution-bridge.service -f"
-    echo "  Status: sudo systemctl status evolution-bridge.service"
-    echo "  Restart: sudo systemctl restart evolution-bridge.service"
 else
-    echo "❌ Falha ao iniciar serviço"
-    echo "Verifique os logs: sudo journalctl -u evolution-bridge.service -n 50"
+    echo "Falha ao iniciar servico. Logs:"
+    journalctl -u evolution-bridge.service -n 50 --no-pager
     exit 1
 fi

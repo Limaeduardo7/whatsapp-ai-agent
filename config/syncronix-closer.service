@@ -3,7 +3,8 @@ Description=Syncronix WhatsApp AI Closer
 After=network.target
 
 [Service]
-User=root
+User=whatsapp-agent
+Group=whatsapp-agent
 WorkingDirectory=/root/.openclaw/workspace/whatsapp-ai-agent
 Environment="PATH=/usr/local/bin:/usr/bin:/bin"
 EnvironmentFile=/root/.openclaw/workspace/whatsapp-ai-agent/.env
@@ -13,6 +14,8 @@ ExecStart=/usr/bin/python3 -m uvicorn src.main:app --host 0.0.0.0 --port 8002
 Restart=always
 RestartSec=5
 KillMode=mixed
+NoNewPrivileges=true
+PrivateTmp=true
 
 [Install]
 WantedBy=multi-user.target
