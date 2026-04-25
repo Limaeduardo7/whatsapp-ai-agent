@@ -186,6 +186,19 @@ class MarketingRepository:
         with _connect(self.settings.db_path) as conn:
             conn.execute(
                 """
+                CREATE TABLE IF NOT EXISTS chat_profiles (
+                    phone TEXT PRIMARY KEY,
+                    name TEXT,
+                    language TEXT,
+                    summary_text TEXT,
+                    opted_out INTEGER NOT NULL DEFAULT 0,
+                    last_seen_at TEXT,
+                    updated_at TEXT NOT NULL
+                )
+                """
+            )
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS marketing_customers (
                     phone TEXT PRIMARY KEY,
                     name TEXT,
@@ -232,6 +245,12 @@ class MarketingRepository:
                 )
                 """
             )
+            conn.commit()
+            cols = [r[1] for r in conn.execute("PRAGMA table_info(chat_profiles)").fetchall()]
+            if "summary_text" not in cols:
+                conn.execute("ALTER TABLE chat_profiles ADD COLUMN summary_text TEXT")
+            if "opted_out" not in cols:
+                conn.execute("ALTER TABLE chat_profiles ADD COLUMN opted_out INTEGER NOT NULL DEFAULT 0")
             conn.commit()
 
     def upsert_customer_after_purchase(
@@ -289,13 +308,15 @@ class MarketingRepository:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
                 """
-                SELECT *
-                FROM marketing_customers
-                WHERE status = 'active'
-                  AND current_sequence_id IS NOT NULL
-                  AND next_send_at IS NOT NULL
-                  AND datetime(next_send_at) <= datetime(?)
-                ORDER BY datetime(next_send_at) ASC
+                SELECT mc.*
+                FROM marketing_customers mc
+                LEFT JOIN chat_profiles cp ON cp.phone = mc.phone
+                WHERE mc.status = 'active'
+                  AND mc.current_sequence_id IS NOT NULL
+                  AND mc.next_send_at IS NOT NULL
+                  AND COALESCE(cp.opted_out, 0) = 0
+                  AND datetime(mc.next_send_at) <= datetime(?)
+                ORDER BY datetime(mc.next_send_at) ASC
                 LIMIT ?
                 """,
                 (now_iso(), limit),

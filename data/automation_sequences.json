@@ -2,43 +2,105 @@
   "sequences": [
     {
       "id": "seq_chave_para_regra",
-      "name": "Cross-sell: Chave do Poder -> Regra da Vida",
+      "name": "Cross-sell consultivo: Chave do Poder -> Regra da Vida",
+      "goal": "Converter comprador da Chave do Poder para o metodo pratico de execucao diaria.",
       "trigger_products": ["chave do poder", "la clave del poder", "the key of power"],
       "target_product": "A Regra da Vida",
-      "repeat_last_every_hours": 72,
+      "repeat_last_every_hours": 0,
       "steps": [
         {
-          "text": "Parabéns pela sua compra da Chave do Poder. 👊\n\nAgora vem a etapa que separa quem se inspira de quem muda de vida: execução diária.\n\nA Regra da Vida foi criada exatamente para isso — transformar clareza em disciplina e resultado.\n\nAcesse aqui: https://syncronix.co/ebook-a-regra-da-vida",
+          "text": "Parabens pela sua compra da Chave do Poder.\n\nEla te da clareza sobre direcao, decisao e poder pessoal.\n\nO proximo passo natural e transformar essa clareza em rotina. E exatamente esse o papel da Regra da Vida.\n\nAqui esta o acesso: https://syncronix.co/ebook-a-regra-da-vida",
           "delay_hours_after": 2
         },
         {
-          "text": "Rápido e direto: a maioria não falha por falta de conhecimento. Falha por padrão mental repetido no dia a dia.\n\nA Regra da Vida te entrega o método prático para quebrar esse ciclo e manter consistência.\n\nLink: https://syncronix.co/ebook-a-regra-da-vida\n\nSe quiser, te explico em 1 mensagem como aplicar ainda hoje.",
+          "text": "Uma forma simples de aplicar a Chave do Poder hoje:\n\nEscolha 1 decisao que voce vem adiando e escreva o primeiro passo concreto para executar ainda nas proximas 24h.\n\nA Regra da Vida aprofunda isso com um metodo diario para manter constancia.\n\nLink direto: https://syncronix.co/ebook-a-regra-da-vida",
           "delay_hours_after": 24
         },
         {
-          "text": "Último lembrete desta janela: se você quer acelerar resultado de forma estruturada, o próximo passo é A Regra da Vida.\n\nEntrar agora: https://syncronix.co/ebook-a-regra-da-vida\n\nSe preferir, me responde \"EU QUERO\" que eu te envio o caminho mais rápido.",
+          "text": "Muita gente entende a teoria, mas perde resultado na execucao.\n\nA Regra da Vida foi pensada para fechar essa lacuna: menos impulso, mais disciplina aplicada.\n\nSe voce quer continuar a jornada com um plano pratico, este e o caminho:\nhttps://syncronix.co/ebook-a-regra-da-vida",
           "delay_hours_after": 48
+        },
+        {
+          "text": "Ultima mensagem desta sequencia.\n\nSe a Chave do Poder te deu clareza, a Regra da Vida te ajuda a sustentar essa clareza no dia a dia.\n\nAcesse aqui: https://syncronix.co/ebook-a-regra-da-vida\n\nSe nao quiser receber lembretes, responda SAIR.",
+          "delay_hours_after": 72
         }
       ]
     },
     {
       "id": "seq_regra_para_algoritmo",
-      "name": "Cross-sell: Regra da Vida -> Algoritmo do Universo",
+      "name": "Cross-sell consultivo: Regra da Vida -> Algoritmo do Universo",
+      "goal": "Levar comprador da Regra da Vida para uma camada de leitura estrategica da realidade.",
       "trigger_products": ["regra da vida", "regla de la vida", "rule of life"],
       "target_product": "O Algoritmo do Universo",
-      "repeat_last_every_hours": 72,
+      "repeat_last_every_hours": 0,
       "steps": [
         {
-          "text": "Excelente decisão com A Regra da Vida. 🚀\n\nPróximo nível recomendado: O Algoritmo do Universo.\n\nEle te ajuda a ler o sistema por trás dos seus resultados, para parar de agir no escuro e decidir com precisão.\n\nAcesse: https://syncronix.co/ebook-o-algoritmo-do-universo",
+          "text": "Boa escolha com A Regra da Vida.\n\nEla organiza comportamento, disciplina e execucao.\n\nO proximo nivel e entender os padroes por tras das decisoes e resultados. Esse e o foco do Algoritmo do Universo.\n\nAcesse aqui: https://syncronix.co/ebook-o-algoritmo-do-universo",
           "delay_hours_after": 4
         },
         {
-          "text": "Ponto crítico: estratégia sem leitura correta da realidade gera esforço alto e retorno baixo.\n\nO Algoritmo do Universo corrige esse ponto e aumenta a qualidade das suas decisões.\n\nLink direto: https://syncronix.co/ebook-o-algoritmo-do-universo\n\nSe quiser, te mando um resumo dos 3 ganhos práticos antes de você entrar.",
+          "text": "Uma pergunta util para hoje:\n\nO que esta se repetindo na sua vida que talvez nao seja azar, mas padrao?\n\nO Algoritmo do Universo trabalha exatamente essa leitura: perceber o sistema antes de agir no escuro.\n\nLink direto: https://syncronix.co/ebook-o-algoritmo-do-universo",
           "delay_hours_after": 24
         },
         {
-          "text": "Fechamento desta janela: se você quer consolidar sua evolução, esse é o próximo passo mais lógico.\n\nO Algoritmo do Universo: https://syncronix.co/ebook-o-algoritmo-do-universo\n\nSe quiser ajuda para decidir rápido, me responde \"QUERO AVANÇAR\".",
+          "text": "Disciplina sem leitura correta pode virar esforco mal direcionado.\n\nDepois da Regra da Vida, o Algoritmo do Universo ajuda voce a tomar decisoes com mais contexto, precisao e estrategia.\n\nVeja aqui: https://syncronix.co/ebook-o-algoritmo-do-universo",
           "delay_hours_after": 48
+        },
+        {
+          "text": "Encerrando esta sequencia.\n\nSe voce quer ir alem da execucao e entender melhor os padroes que moldam resultado, o proximo passo e o Algoritmo do Universo.\n\nAcesse: https://syncronix.co/ebook-o-algoritmo-do-universo\n\nPara parar lembretes, responda SAIR.",
+          "delay_hours_after": 72
+        }
+      ]
+    },
+    {
+      "id": "seq_algoritmo_para_energy",
+      "name": "Cross-sell consultivo: Algoritmo do Universo -> Energy Hack",
+      "goal": "Conectar leitura estrategica com energia e performance diaria.",
+      "trigger_products": ["algoritmo do universo", "algorithm of the universe", "algoritmo del universo"],
+      "target_product": "Energy Hack",
+      "repeat_last_every_hours": 0,
+      "steps": [
+        {
+          "text": "Excelente avancar com O Algoritmo do Universo.\n\nDepois de entender melhor os padroes, vem uma pergunta pratica: voce tem energia suficiente para agir no nivel que deseja?\n\nO Energy Hack foi criado para essa parte da jornada.\n\nAcesse aqui: https://syncronix.co/energy-hack",
+          "delay_hours_after": 6
+        },
+        {
+          "text": "Um ajuste simples para observar hoje:\n\nAntes de tentar produzir mais, identifique o que mais drena sua energia: excesso de decisao, sono ruim, ambiente ou falta de foco.\n\nO Energy Hack aprofunda esse diagnostico com aplicacao pratica.\n\nLink: https://syncronix.co/energy-hack",
+          "delay_hours_after": 24
+        },
+        {
+          "text": "Estrategia sem energia vira plano parado.\n\nO Energy Hack entra como ponte entre clareza mental e execucao com vitalidade.\n\nSe esse e seu momento, veja aqui:\nhttps://syncronix.co/energy-hack",
+          "delay_hours_after": 48
+        },
+        {
+          "text": "Ultimo lembrete sobre o Energy Hack.\n\nSe voce quer sustentar decisao, foco e execucao com mais energia, este e o proximo passo recomendado.\n\nAcesse: https://syncronix.co/energy-hack\n\nPara parar lembretes, responda SAIR.",
+          "delay_hours_after": 72
+        }
+      ]
+    },
+    {
+      "id": "seq_energy_para_gestao",
+      "name": "Cross-sell consultivo: Energy Hack -> Gestao Inteligente",
+      "goal": "Levar comprador de performance pessoal para organizacao e gestao de resultados.",
+      "trigger_products": ["energy hack"],
+      "target_product": "Gestao Inteligente",
+      "repeat_last_every_hours": 0,
+      "steps": [
+        {
+          "text": "Boa decisao com o Energy Hack.\n\nEnergia ajuda voce a executar melhor. Mas para transformar execucao em resultado consistente, tambem e preciso sistema.\n\nA Gestao Inteligente entra nesse ponto.\n\nAcesse aqui: https://syncronix.co/gestao-inteligente",
+          "delay_hours_after": 6
+        },
+        {
+          "text": "Uma pergunta objetiva:\n\nHoje voce administra suas metas com um sistema claro ou depende de memoria, urgencia e improviso?\n\nA Gestao Inteligente foi feita para organizar decisao, prioridade e acompanhamento.\n\nLink direto: https://syncronix.co/gestao-inteligente",
+          "delay_hours_after": 24
+        },
+        {
+          "text": "Performance pessoal melhora quando existe clareza de gestao.\n\nA Gestao Inteligente ajuda a transformar energia e foco em rotina, indicadores e progresso real.\n\nVeja aqui: https://syncronix.co/gestao-inteligente",
+          "delay_hours_after": 48
+        },
+        {
+          "text": "Encerrando esta sequencia.\n\nSe voce quer sair do improviso e organizar melhor seus resultados, o proximo passo e Gestao Inteligente.\n\nAcesse: https://syncronix.co/gestao-inteligente\n\nPara parar lembretes, responda SAIR.",
+          "delay_hours_after": 72
         }
       ]
     }

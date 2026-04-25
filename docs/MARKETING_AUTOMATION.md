@@ -36,7 +36,17 @@ Campos:
 
 - Compra duplicada e deduplicada por `purchase_id + phone + product`.
 - Cada contato recebe no maximo 1 mensagem de marketing por dia.
+- Contatos com opt-out persistido em `chat_profiles.opted_out` nao recebem novas mensagens.
 - Se uma sequencia terminar, o contato fica em `waiting_purchase` ou repete o ultimo passo quando `repeat_last_every_hours` estiver configurado.
+
+## Principios de copy
+
+- Comecar com contexto da compra anterior, sem parecer disparo frio.
+- Dar uma dica pratica antes de vender.
+- Fazer ponte logica entre o produto comprado e o proximo produto.
+- Usar CTA direto, sem pressao artificial.
+- Encerrar a sequencia com opt-out claro.
+- Evitar repeticao infinita de lembrete para preservar reputacao do numero.
 
 ## Producao
 
