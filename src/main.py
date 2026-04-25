@@ -59,6 +59,10 @@ BLACKLIST_FILE = os.getenv("BLACKLIST_FILE", "./data/ignored_numbers.json")
 DB_PATH = os.getenv("DB_PATH", "./data/agent.db")
 LOG_FILE = os.getenv("LOG_FILE", "./logs/app.log")
 
+# Feature flags
+MARKETING_AUTOMATION_ENABLED = str(os.getenv("MARKETING_AUTOMATION_ENABLED", "true")).strip().lower() in {"1", "true", "yes", "on"}
+AI_AGENT_ENABLED = str(os.getenv("AI_AGENT_ENABLED", "true")).strip().lower() in {"1", "true", "yes", "on"}
+
 # Modo comercial (closer)
 CLOSER_ENABLED = str(os.getenv("CLOSER_ENABLED", "true")).strip().lower() in {"1", "true", "yes", "on"}
 MAX_HISTORY_MESSAGES = int(os.getenv("MAX_HISTORY_MESSAGES", "12"))
@@ -103,12 +107,14 @@ app.include_router(marketing_router)
 @app.on_event("startup")
 async def _on_startup():
     init_chat_db()
-    start_scheduler()
+    if MARKETING_AUTOMATION_ENABLED:
+        start_scheduler()
 
 
 @app.on_event("shutdown")
 async def _on_shutdown():
-    stop_scheduler()
+    if MARKETING_AUTOMATION_ENABLED:
+        stop_scheduler()
 
 # CORS
 app.add_middleware(
@@ -163,7 +169,7 @@ async def _handle_evolution_webhook(request: Request, background_tasks: Backgrou
         raw_event = data.get("event", "")
         event = raw_event.lower().replace("-", "").replace("_", "")
 
-        if "messagesupsert" in event or "messages.upsert" in raw_event:
+        if ("messagesupsert" in event or "messages.upsert" in raw_event) and AI_AGENT_ENABLED:
             background_tasks.add_task(handle_message, data)
 
         return JSONResponse({"status": "received"}, status_code=200)
