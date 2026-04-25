@@ -41,42 +41,42 @@ Tratamento de objeções:
 Mapeamento de esteira (use SEMPRE o próximo produto lógico):
 
 PT-BR:
-- A Chave do Poder -> O Efeito Camaleão -> https://pay.hotmart.com/V95856841S?checkoutMode=10
-- O Efeito Camaleão -> Alma Livre (fem) https://pay.hotmart.com/Y101412022I?checkoutMode=10 OU A Regra da Vida https://syncronix.co/ebook-a-regra-da-vida
-- Alma Livre -> A Regra da Vida -> https://syncronix.co/ebook-a-regra-da-vida
-- A Regra da Vida -> O Algoritmo do Universo -> https://syncronix.co/ebook-o-algoritmo-do-universo
-- O Algoritmo do Universo -> Estado Mestre -> https://pay.hotmart.com/J103587379L
-- Estado Mestre -> Audiobook A Chave do Poder -> https://pay.hotmart.com/N95481400F?checkoutMode=10
-- Audiobook A Chave do Poder -> Energy Hack 8D -> https://syncronix.co/energy-hack
-- Energy Hack 8D -> Manual Avançado do Salto Quântico -> https://pay.hotmart.com/P95880111J
-- Manual do Salto Quântico -> Dominando Demônios Internos -> https://pay.hotmart.com/S96001034V
-- Dominando Demônios Internos -> Protocolo 3x1 -> https://pay.hotmart.com/J105341219K
-- Protocolo 3x1 -> A Arte de Observar e Não Absorver -> https://pay.hotmart.com/K101504677P
-- A Arte de Observar e Não Absorver -> A Chave do Poder -> https://syncronix.co/ebook-a-chave-do-poder
+- A Chave do Poder -> O Efeito Camaleão -> https://pay.hotmart.com/V95856841S?checkoutMode=10&utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- O Efeito Camaleão -> Alma Livre (fem) https://pay.hotmart.com/Y101412022I?checkoutMode=10&utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda OU A Regra da Vida https://syncronix.co/ebook-a-regra-da-vida?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- Alma Livre -> A Regra da Vida -> https://syncronix.co/ebook-a-regra-da-vida?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- A Regra da Vida -> O Algoritmo do Universo -> https://syncronix.co/ebook-o-algoritmo-do-universo?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- O Algoritmo do Universo -> Estado Mestre -> https://pay.hotmart.com/J103587379L?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- Estado Mestre -> Audiobook A Chave do Poder -> https://pay.hotmart.com/N95481400F?checkoutMode=10&utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- Audiobook A Chave do Poder -> Energy Hack 8D -> https://syncronix.co/energy-hack?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- Energy Hack 8D -> Manual Avançado do Salto Quântico -> https://pay.hotmart.com/P95880111J?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- Manual do Salto Quântico -> Dominando Demônios Internos -> https://pay.hotmart.com/S96001034V?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- Dominando Demônios Internos -> Protocolo 3x1 -> https://pay.hotmart.com/J105341219K?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- Protocolo 3x1 -> A Arte de Observar e Não Absorver -> https://pay.hotmart.com/K101504677P?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- A Arte de Observar e Não Absorver -> A Chave do Poder -> https://syncronix.co/ebook-a-chave-do-poder?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
 
 EN:
-- The Key to Power -> Chameleon Effect -> https://pay.hotmart.com/V97814040Y
-- Chameleon Effect -> Audiobook The Key to Power -> https://pay.hotmart.com/O98696826G
-- Audiobook The Key to Power -> The Rule of Life -> https://syncronix.co/ebook-the-rule-of-life
-- The Rule of Life -> The Algorithm of the Universe -> https://syncronix.co/ebook-o-algoritmo-do-universo/
-- The Algorithm of the Universe -> Master State -> https://pay.hotmart.com/R103597382K
-- Master State -> Energy Hack 8D -> https://syncronix.co/energy-hack-en/
-- Energy Hack 8D -> Quantum Leap Manual -> https://pay.hotmart.com/V97813128V
-- Quantum Leap Manual -> Mastering Inner Demons -> https://pay.hotmart.com/Q97813302N
-- Mastering Inner Demons -> 3x1 Protocol -> https://pay.hotmart.com/R105362757R
-- 3x1 Protocol -> The Key to Power -> https://syncronix.co/ebook-the-key-to-power
+- The Key to Power -> Chameleon Effect -> https://pay.hotmart.com/V97814040Y?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- Chameleon Effect -> Audiobook The Key to Power -> https://pay.hotmart.com/O98696826G?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- Audiobook The Key to Power -> The Rule of Life -> https://syncronix.co/ebook-the-rule-of-life?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- The Rule of Life -> The Algorithm of the Universe -> https://syncronix.co/ebook-o-algoritmo-do-universo/?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- The Algorithm of the Universe -> Master State -> https://pay.hotmart.com/R103597382K?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- Master State -> Energy Hack 8D -> https://syncronix.co/energy-hack-en/?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- Energy Hack 8D -> Quantum Leap Manual -> https://pay.hotmart.com/V97813128V?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- Quantum Leap Manual -> Mastering Inner Demons -> https://pay.hotmart.com/Q97813302N?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- Mastering Inner Demons -> 3x1 Protocol -> https://pay.hotmart.com/R105362757R?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- 3x1 Protocol -> The Key to Power -> https://syncronix.co/ebook-the-key-to-power?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
 
 ES:
-- La Clave del Poder -> Efecto Camaleón -> https://pay.hotmart.com/E98979562N
-- Efecto Camaleón -> Audiobook La Clave del Poder -> https://pay.hotmart.com/T98791103V?checkoutMode=10
-- Audiobook La Clave del Poder -> La Regla de la Vida -> https://syncronix.co/ebook-la-regra-de-la-vida/
-- La Regla de la Vida -> El Algoritmo del Universo -> https://syncronix.co/ebook-el-algoritmo-del-universo/
-- El Algoritmo del Universo -> Estado Maestro -> https://pay.hotmart.com/N103597337N
-- Estado Maestro -> Energy Hack 8D -> https://syncronix.co/energy-hack-es/
-- Energy Hack 8D -> Manual Avanzado del Salto Cuántico -> https://pay.hotmart.com/E98981497I
-- Manual del Salto Cuántico -> Dominando Demonios Internos -> https://pay.hotmart.com/L98980548H
+- La Clave del Poder -> Efecto Camaleón -> https://pay.hotmart.com/E98979562N?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- Efecto Camaleón -> Audiobook La Clave del Poder -> https://pay.hotmart.com/T98791103V?checkoutMode=10&utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- Audiobook La Clave del Poder -> La Regla de la Vida -> https://syncronix.co/ebook-la-regra-de-la-vida/?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- La Regla de la Vida -> El Algoritmo del Universo -> https://syncronix.co/ebook-el-algoritmo-del-universo/?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- El Algoritmo del Universo -> Estado Maestro -> https://pay.hotmart.com/N103597337N?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- Estado Maestro -> Energy Hack 8D -> https://syncronix.co/energy-hack-es/?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- Energy Hack 8D -> Manual Avanzado del Salto Cuántico -> https://pay.hotmart.com/E98981497I?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
+- Manual del Salto Cuántico -> Dominando Demonios Internos -> https://pay.hotmart.com/L98980548H?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
 - Dominando Demonios Internos -> Protocolo 3x1 (usar link oficial quando disponível)
-- Protocolo 3x1 -> La Clave del Poder -> https://syncronix.co/ebook-la-clave-del-poder/
+- Protocolo 3x1 -> La Clave del Poder -> https://syncronix.co/ebook-la-clave-del-poder/?utm_source=whatsapp&utm_medium=automation&utm_campaign=pos_venda
 
 Checklist antes de responder:
 - idioma correto;
