@@ -738,6 +738,266 @@ def _extract_purchase_amount(raw_payload: Any) -> tuple[float | None, str | None
     return amount, (currency or None)
 
 
+# ─── Data-science helpers ──────────────────────────────────────────────────────
+
+def _safe_isoparse(value: Any) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).astimezone(UTC)
+    except Exception:
+        return None
+
+
+def _percentile(sorted_lst: list[float], p: float) -> float:
+    if not sorted_lst:
+        return 0.0
+    idx = max(0, int(len(sorted_lst) * p / 100) - 1)
+    return sorted_lst[min(idx, len(sorted_lst) - 1)]
+
+
+def _compute_engagement_scores(
+    customers: list[dict[str, Any]],
+    messages: list[dict[str, Any]],
+    sequence_lengths: dict[str, int],
+) -> dict[str, int]:
+    """phone → score 0-100  (completion 60% + recency 30% + status 10%)."""
+    now = datetime.now(UTC)
+    msgs_by_phone: dict[str, list[dict[str, Any]]] = {}
+    for m in messages:
+        msgs_by_phone.setdefault(m.get("phone", ""), []).append(m)
+
+    scores: dict[str, int] = {}
+    for c in customers:
+        phone = c.get("phone", "")
+        seq_id = c.get("current_sequence_id") or ""
+        total_steps = max(sequence_lengths.get(seq_id, 1), 1)
+        phone_msgs = msgs_by_phone.get(phone, [])
+
+        steps_done = len({m.get("step_index", 0) for m in phone_msgs})
+        completion = (steps_done / total_steps) * 0.60
+
+        last_dates = [_safe_isoparse(m.get("created_at")) for m in phone_msgs]
+        last_dates = [d for d in last_dates if d]
+        if last_dates:
+            days_ago = (now - max(last_dates)).days
+            recency = max(0.0, 1.0 - days_ago / 30.0) * 0.30
+        else:
+            recency = 0.0
+
+        status_bonus = 0.10 if c.get("status") == "active" else 0.0
+        scores[phone] = min(100, round((completion + recency + status_bonus) * 100))
+    return scores
+
+
+def _compute_cohort_data(
+    purchases: list[dict[str, Any]],
+    messages: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Weekly cohort: for each purchase-week cohort, % who reached each step."""
+    from collections import defaultdict
+
+    phone_first_week: dict[str, str] = {}
+    for p in sorted(purchases, key=lambda x: x.get("created_at") or x.get("approved_at") or ""):
+        phone = p.get("phone") or ""
+        raw = p.get("created_at") or p.get("approved_at")
+        d = _safe_isoparse(raw)
+        if phone and d and phone not in phone_first_week:
+            phone_first_week[phone] = d.strftime("%Y-W%V")
+
+    phone_max_step: dict[str, int] = {}
+    for m in messages:
+        phone = m.get("phone") or ""
+        try:
+            step = int(m.get("step_index") or 0) + 1
+        except (ValueError, TypeError):
+            step = 1
+        if phone:
+            phone_max_step[phone] = max(phone_max_step.get(phone, 0), step)
+
+    week_phones: dict[str, list[str]] = defaultdict(list)
+    for phone, week in phone_first_week.items():
+        week_phones[week].append(phone)
+
+    weeks = sorted(week_phones.keys())[-10:]
+    max_step_seen = max(phone_max_step.values(), default=3)
+    steps = list(range(1, min(max_step_seen + 1, 9)))
+
+    data: list[list[Any]] = []
+    for wi, week in enumerate(weeks):
+        phones = week_phones[week]
+        total = len(phones)
+        if total == 0:
+            continue
+        for si, step in enumerate(steps):
+            reached = sum(1 for ph in phones if phone_max_step.get(ph, 0) >= step)
+            rate = round(reached / total * 100, 1)
+            data.append([wi, si, rate])
+
+    return {
+        "x_labels": [f"Step {s}" for s in steps],
+        "y_labels": weeks,
+        "data": data,
+    }
+
+
+def _compute_sequence_analytics(
+    customers: list[dict[str, Any]],
+    purchases: list[dict[str, Any]],
+    messages: list[dict[str, Any]],
+    sequences: list[dict[str, Any]],
+    sequence_lengths: dict[str, int],
+) -> list[dict[str, Any]]:
+    """Per-sequence: step completion rates, conversion rate, avg days to complete."""
+    from collections import defaultdict
+
+    seq_customers: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for c in customers:
+        seq_id = c.get("current_sequence_id") or ""
+        if seq_id:
+            seq_customers[seq_id].append(c)
+
+    seq_step_phones: dict[str, dict[int, set[str]]] = defaultdict(lambda: defaultdict(set))
+    for m in messages:
+        seq_id = m.get("sequence_id") or ""
+        phone = m.get("phone") or ""
+        try:
+            step = int(m.get("step_index") or 0)
+        except (ValueError, TypeError):
+            step = 0
+        if seq_id and phone:
+            seq_step_phones[seq_id][step].add(phone)
+
+    phone_first_purchase: dict[str, datetime] = {}
+    for p in sorted(purchases, key=lambda x: x.get("created_at") or ""):
+        phone = p.get("phone") or ""
+        d = _safe_isoparse(p.get("created_at") or p.get("approved_at"))
+        if phone and d and phone not in phone_first_purchase:
+            phone_first_purchase[phone] = d
+
+    result: list[dict[str, Any]] = []
+    for seq in sequences:
+        seq_id = seq.get("id") or ""
+        n_steps = sequence_lengths.get(seq_id, 0)
+        custs = seq_customers.get(seq_id, [])
+        total = len(custs)
+
+        step_rates = []
+        for i in range(n_steps):
+            count = len(seq_step_phones.get(seq_id, {}).get(i, set()))
+            step_rates.append({
+                "step": i + 1,
+                "count": count,
+                "rate": round(count / max(total, 1) * 100, 1),
+            })
+
+        converted = sum(1 for c in custs if c.get("status") == "waiting_purchase")
+        conversion_rate = round(converted / max(total, 1) * 100, 1)
+
+        days_list: list[float] = []
+        for c in custs:
+            if c.get("status") != "waiting_purchase":
+                continue
+            phone = c.get("phone") or ""
+            t0 = phone_first_purchase.get(phone)
+            t1 = _safe_isoparse(c.get("updated_at"))
+            if t0 and t1:
+                days_list.append((t1 - t0).total_seconds() / 86400)
+
+        result.append({
+            "id": seq_id,
+            "name": seq.get("name") or seq_id,
+            "language": seq.get("language"),
+            "total_customers": total,
+            "n_steps": n_steps,
+            "step_rates": step_rates,
+            "conversion_rate": conversion_rate,
+            "converted": converted,
+            "avg_days_to_complete": round(sum(days_list) / len(days_list), 1) if days_list else None,
+        })
+
+    return sorted(result, key=lambda x: x["conversion_rate"], reverse=True)
+
+
+def _compute_attribution_comparison(purchases: list[dict[str, Any]]) -> dict[str, Any]:
+    """First-touch vs last-touch side by side."""
+    from collections import defaultdict
+
+    phone_purchases: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for p in purchases:
+        phone = p.get("phone") or ""
+        if phone:
+            phone_purchases[phone].append(p)
+
+    def src(p: dict[str, Any]) -> str:
+        t = _extract_tracking_fields(p.get("raw_payload"))
+        return (
+            t.get("utm_source") or t.get("utm_campaign") or
+            t.get("sck") or t.get("external_code") or "sem_tracking"
+        ).strip().lower()
+
+    first_touch: dict[str, int] = {}
+    last_touch: dict[str, int] = {}
+    for ps in phone_purchases.values():
+        sorted_ps = sorted(ps, key=lambda x: x.get("created_at") or x.get("approved_at") or "")
+        f = src(sorted_ps[0])
+        l = src(sorted_ps[-1])
+        first_touch[f] = first_touch.get(f, 0) + 1
+        last_touch[l] = last_touch.get(l, 0) + 1
+
+    def top(d: dict[str, int], n: int = 8) -> list[dict[str, Any]]:
+        return [{"source": k, "count": v} for k, v in sorted(d.items(), key=lambda x: x[1], reverse=True)[:n]]
+
+    return {"first_touch": top(first_touch), "last_touch": top(last_touch)}
+
+
+def _compute_time_to_conversion(
+    customers: list[dict[str, Any]],
+    purchases: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Distribution of days from first purchase to sequence completion."""
+    phone_first: dict[str, datetime] = {}
+    for p in sorted(purchases, key=lambda x: x.get("created_at") or ""):
+        phone = p.get("phone") or ""
+        d = _safe_isoparse(p.get("created_at") or p.get("approved_at"))
+        if phone and d and phone not in phone_first:
+            phone_first[phone] = d
+
+    days_list: list[float] = []
+    for c in customers:
+        if c.get("status") != "waiting_purchase":
+            continue
+        phone = c.get("phone") or ""
+        t0 = phone_first.get(phone)
+        t1 = _safe_isoparse(c.get("updated_at"))
+        if t0 and t1:
+            days = (t1 - t0).total_seconds() / 86400
+            if 0 <= days <= 180:
+                days_list.append(days)
+
+    if not days_list:
+        return {"available": False}
+
+    days_sorted = sorted(days_list)
+    n = len(days_sorted)
+    buckets = [(0, 3), (3, 7), (7, 14), (14, 21), (21, 30), (30, 60), (60, 180)]
+    distribution = [
+        {"label": f"{lo}–{hi}d", "count": sum(1 for d in days_list if lo <= d < hi)}
+        for lo, hi in buckets
+    ]
+    return {
+        "available": True,
+        "n": n,
+        "mean": round(sum(days_list) / n, 1),
+        "min": round(days_sorted[0], 1),
+        "p25": round(_percentile(days_sorted, 25), 1),
+        "median": round(_percentile(days_sorted, 50), 1),
+        "p75": round(_percentile(days_sorted, 75), 1),
+        "max": round(days_sorted[-1], 1),
+        "distribution": distribution,
+    }
+
+
 def _sequence_validation_issues(sequences: list[dict[str, Any]]) -> list[dict[str, Any]]:
     issues: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
@@ -774,24 +1034,22 @@ def _build_dashboard_analytics(
     sequences: list[dict[str, Any]],
 ) -> dict[str, Any]:
     price_map = _load_price_map()
-    sequence_lengths = {seq.get("id"): len(seq.get("steps") or []) for seq in sequences}
+    sequence_lengths: dict[str, int] = {seq.get("id"): len(seq.get("steps") or []) for seq in sequences}
+
+    failed_set = {
+        id(row) for row in messages
+        if any(t in str(row.get("provider_status") or "").lower() for t in ["fail", "error", "timeout", "denied"])
+    }
+    failed_messages = [r for r in messages if id(r) in failed_set]
+    successful_messages = [r for r in messages if id(r) not in failed_set and str(r.get("provider_status") or "").strip()]
+
     completed_customers = [
-        row
-        for row in customers
-        if row.get("status") == "waiting_purchase"
-        or int(row.get("current_step") or 0) >= sequence_lengths.get(row.get("current_sequence_id"), 9999)
-    ]
-    failed_messages = [
-        row
-        for row in messages
-        if any(token in str(row.get("provider_status") or "").lower() for token in ["fail", "error", "timeout", "denied"])
-    ]
-    successful_messages = [
-        row
-        for row in messages
-        if row not in failed_messages and str(row.get("provider_status") or "").strip()
+        r for r in customers
+        if r.get("status") == "waiting_purchase"
+        or int(r.get("current_step") or 0) >= sequence_lengths.get(r.get("current_sequence_id"), 9999)
     ]
 
+    # ── Purchase aggregations ──────────────────────────────────────────────────
     purchases_by_product: dict[str, dict[str, Any]] = {}
     purchases_by_phone: dict[str, int] = {}
     purchases_by_tracking_source: dict[str, int] = {}
@@ -801,6 +1059,7 @@ def _build_dashboard_analytics(
     attributed_sales = 0
     attributed_revenue = 0.0
     attributed_real_revenue_by_currency: dict[str, float] = {}
+
     for row in purchases:
         product = str(row.get("product") or "Sem produto")
         price = price_map.get(product.strip().lower())
@@ -811,6 +1070,7 @@ def _build_dashboard_analytics(
         entry["count"] += 1
         if price is not None:
             entry["estimated_revenue"] += price
+
         phone = str(row.get("phone") or "")
         purchases_by_phone[phone] = purchases_by_phone.get(phone, 0) + 1
 
@@ -822,14 +1082,10 @@ def _build_dashboard_analytics(
             real_revenue_by_currency[ccy] = real_revenue_by_currency.get(ccy, 0.0) + amount
 
         source = (
-            tracking.get("utm_source")
-            or tracking.get("utm_campaign")
-            or tracking.get("sck")
-            or tracking.get("external_code")
-            or "sem_tracking"
-        )
-        source_norm = source.strip().lower()
-        purchases_by_tracking_source[source_norm] = purchases_by_tracking_source.get(source_norm, 0) + 1
+            tracking.get("utm_source") or tracking.get("utm_campaign") or
+            tracking.get("sck") or tracking.get("external_code") or "sem_tracking"
+        ).strip().lower()
+        purchases_by_tracking_source[source] = purchases_by_tracking_source.get(source, 0) + 1
 
         sck = (tracking.get("sck") or "").lower()
         utm_source = (tracking.get("utm_source") or "").lower()
@@ -841,40 +1097,91 @@ def _build_dashboard_analytics(
                 ccy = currency or "UNK"
                 attributed_real_revenue_by_currency[ccy] = attributed_real_revenue_by_currency.get(ccy, 0.0) + amount
 
+    # ── Message / sequence aggregations ───────────────────────────────────────
     customers_by_sequence: dict[str, int] = {}
     for row in customers:
         seq_id = str(row.get("current_sequence_id") or "Sem sequência")
         customers_by_sequence[seq_id] = customers_by_sequence.get(seq_id, 0) + 1
 
     messages_by_sequence: dict[str, dict[str, Any]] = {}
+    step_counts: dict[int, int] = {}
     for row in messages:
         seq_id = str(row.get("sequence_id") or "Sem sequência")
         entry = messages_by_sequence.setdefault(seq_id, {"sequence_id": seq_id, "sent": 0, "failed": 0})
         entry["sent"] += 1
-        if row in failed_messages:
+        if id(row) in failed_set:
             entry["failed"] += 1
-
-    step_counts: dict[int, int] = {}
-    for row in messages:
         try:
             step = int(row.get("step_index") or 0)
         except (TypeError, ValueError):
             step = 0
         step_counts[step] = step_counts.get(step, 0) + 1
 
-    last_purchase_at = max((row.get("created_at") or row.get("approved_at") or "" for row in purchases), default="")
-    last_message_at = max((row.get("created_at") or "" for row in messages), default="")
+    last_purchase_at = max((r.get("created_at") or r.get("approved_at") or "" for r in purchases), default="")
+    last_message_at = max((r.get("created_at") or "" for r in messages), default="")
+
+    # ── Dynamic funnel with conversion rates ──────────────────────────────────
+    seq_started = len([r for r in customers if r.get("current_sequence_id")])
+    repeat_buyers = len([ph for ph, cnt in purchases_by_phone.items() if ph and cnt > 1])
+    max_step_shown = min(max(step_counts.keys(), default=2), 6)
+
+    funnel_raw = [
+        ("Compras aprovadas",   len(purchases)),
+        ("Sequência iniciada",  seq_started),
+        *[(f"Step {i + 1} enviado", step_counts.get(i, 0)) for i in range(max_step_shown + 1) if step_counts.get(i, 0) > 0],
+        ("Repeat buyers",       repeat_buyers),
+        ("Sequência concluída", len(completed_customers)),
+    ]
+    baseline = max(funnel_raw[0][1], 1)
+    funnel: list[dict[str, Any]] = []
+    prev_value = baseline
+    for stage, value in funnel_raw:
+        funnel.append({
+            "stage": stage,
+            "value": value,
+            "rate_vs_top": round(value / baseline * 100, 1),
+            "step_rate": round(value / max(prev_value, 1) * 100, 1),
+        })
+        prev_value = value
+
+    # ── Advanced data-science analytics ───────────────────────────────────────
+    engagement_scores = _compute_engagement_scores(customers, messages, sequence_lengths)
+    cohort_data = _compute_cohort_data(purchases, messages)
+    sequence_analytics = _compute_sequence_analytics(customers, purchases, messages, sequences, sequence_lengths)
+    attribution_comparison = _compute_attribution_comparison(purchases)
+    time_to_conversion = _compute_time_to_conversion(customers, purchases)
+
+    # Engagement score distribution histogram (buckets of 10)
+    score_buckets = [0] * 10
+    for sc in engagement_scores.values():
+        bucket = min(int(sc // 10), 9)
+        score_buckets[bucket] += 1
+    engagement_distribution = [
+        {"range": f"{i * 10}–{i * 10 + 9}", "count": score_buckets[i]}
+        for i in range(10)
+    ]
+
+    # Message failure rate trend (last 7 days)
+    now = datetime.now(UTC)
+    failure_trend: list[dict[str, Any]] = []
+    for days_back in range(6, -1, -1):
+        day_start = now.replace(hour=0, minute=0, second=0, microsecond=0) - __import__("datetime").timedelta(days=days_back)
+        day_end = day_start + __import__("datetime").timedelta(days=1)
+        day_msgs = [
+            m for m in messages
+            if day_start <= (_safe_isoparse(m.get("created_at")) or datetime.min.replace(tzinfo=UTC)) < day_end
+        ]
+        day_failed = sum(1 for m in day_msgs if id(m) in failed_set)
+        failure_trend.append({
+            "day": day_start.strftime("%d/%m"),
+            "total": len(day_msgs),
+            "failed": day_failed,
+            "rate": round(day_failed / max(len(day_msgs), 1) * 100, 1),
+        })
 
     return {
-        "funnel": [
-            {"stage": "Compras aprovadas", "value": len(purchases)},
-            {"stage": "Sequência iniciada", "value": len([row for row in customers if row.get("current_sequence_id")])},
-            {"stage": "Step 1 enviado", "value": step_counts.get(0, 0)},
-            {"stage": "Step 2 enviado", "value": step_counts.get(1, 0)},
-            {"stage": "Step 3 enviado", "value": step_counts.get(2, 0)},
-            {"stage": "Nova compra", "value": len([phone for phone, count in purchases_by_phone.items() if phone and count > 1])},
-            {"stage": "Sequência concluída", "value": len(completed_customers)},
-        ],
+        # ── existing keys (unchanged API contract) ──────────────────────────
+        "funnel": funnel,
         "health": {
             "status": "attention" if failed_messages else "ok",
             "marketing_enabled": settings.marketing_automation_enabled,
@@ -885,35 +1192,43 @@ def _build_dashboard_analytics(
             "last_message_at": last_message_at,
             "failed_messages": len(failed_messages),
             "successful_messages": len(successful_messages),
-            "active_customers": len([row for row in customers if row.get("status") == "active"]),
+            "active_customers": len([r for r in customers if r.get("status") == "active"]),
             "completed_customers": len(completed_customers),
         },
         "performance": {
             "customers_by_sequence": [
-                {"sequence_id": key, "customers": value}
-                for key, value in sorted(customers_by_sequence.items(), key=lambda item: item[1], reverse=True)
+                {"sequence_id": k, "customers": v}
+                for k, v in sorted(customers_by_sequence.items(), key=lambda x: x[1], reverse=True)
             ],
-            "messages_by_sequence": sorted(messages_by_sequence.values(), key=lambda item: item["sent"], reverse=True),
-            "purchases_by_product": sorted(purchases_by_product.values(), key=lambda item: item["count"], reverse=True),
+            "messages_by_sequence": sorted(messages_by_sequence.values(), key=lambda x: x["sent"], reverse=True),
+            "purchases_by_product": sorted(purchases_by_product.values(), key=lambda x: x["count"], reverse=True),
             "purchases_by_tracking_source": [
-                {"source": key, "count": value}
-                for key, value in sorted(purchases_by_tracking_source.items(), key=lambda item: item[1], reverse=True)
+                {"source": k, "count": v}
+                for k, v in sorted(purchases_by_tracking_source.items(), key=lambda x: x[1], reverse=True)
             ],
             "attributed_sales_whatsapp": attributed_sales,
             "attributed_revenue_whatsapp": attributed_revenue if has_revenue else None,
             "real_revenue_by_currency": [
-                {"currency": key, "value": round(value, 2)}
-                for key, value in sorted(real_revenue_by_currency.items(), key=lambda item: item[0])
+                {"currency": k, "value": round(v, 2)}
+                for k, v in sorted(real_revenue_by_currency.items())
             ],
             "attributed_real_revenue_by_currency": [
-                {"currency": key, "value": round(value, 2)}
-                for key, value in sorted(attributed_real_revenue_by_currency.items(), key=lambda item: item[0])
+                {"currency": k, "value": round(v, 2)}
+                for k, v in sorted(attributed_real_revenue_by_currency.items())
             ],
             "estimated_revenue": estimated_revenue if has_revenue else None,
             "revenue_configured": has_revenue,
         },
         "failures": failed_messages[:50],
         "sequence_issues": _sequence_validation_issues(sequences),
+        # ── new data-science keys ───────────────────────────────────────────
+        "engagement_scores": engagement_scores,
+        "engagement_distribution": engagement_distribution,
+        "cohort_data": cohort_data,
+        "sequence_analytics": sequence_analytics,
+        "attribution_comparison": attribution_comparison,
+        "time_to_conversion": time_to_conversion,
+        "failure_trend": failure_trend,
     }
 
 
@@ -1023,6 +1338,11 @@ async def dashboard_data() -> dict[str, Any]:
 
     analytics = _build_dashboard_analytics(customers_data, purchases_data, messages_data, sequences)
     purchases_public = [{k: v for k, v in row.items() if k != "raw_payload"} for row in purchases_data]
+
+    # Attach engagement score to each customer record
+    eng_scores = analytics.get("engagement_scores", {})
+    for c in customers_data:
+        c["engagement_score"] = eng_scores.get(c.get("phone", ""), 0)
 
     return {
         "stats": s,
