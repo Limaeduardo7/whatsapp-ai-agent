@@ -104,8 +104,10 @@ class LLMClient:
             "temperature": 0.7,
             "top_p": 1,
             "stream": False,
-            "chat_template_kwargs": {"thinking": bool(thinking_enabled)},
         }
+        # NVIDIA/Kimi accepts chat_template_kwargs(thinking); OpenAI rejects this field.
+        if "nvidia" in self.settings.llm_api_url or "integrate.api.nvidia.com" in self.settings.llm_api_url:
+            payload["chat_template_kwargs"] = {"thinking": bool(thinking_enabled)}
         text = await self._post(payload)
         if text:
             return text
