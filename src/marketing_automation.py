@@ -8,6 +8,7 @@ from typing import Any
 
 import httpx
 from fastapi import APIRouter, Depends, Header, Request
+from fastapi.responses import HTMLResponse
 
 from src.config import get_settings
 from src.repositories import MarketingRepository
@@ -586,3 +587,179 @@ async def run_once() -> dict[str, Any]:
 @router.get("/automation/stats", dependencies=[Depends(require_admin_api_key)])
 async def stats() -> dict[str, Any]:
     return marketing_repository.stats()
+
+
+@router.get("/dashboard/data")
+async def dashboard_data() -> dict[str, Any]:
+    """Dashboard público (somente leitura): métricas + tabelas resumidas."""
+    s = marketing_repository.stats()
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+
+        customers = conn.execute(
+            """
+            SELECT phone, status, current_sequence_id, current_step, next_send_at, last_product_bought, updated_at
+            FROM marketing_customers
+            ORDER BY datetime(updated_at) DESC
+            LIMIT 200
+            """
+        ).fetchall()
+
+        purchases = conn.execute(
+            """
+            SELECT purchase_id, phone, product, approved_at, created_at
+            FROM marketing_purchases
+            ORDER BY id DESC
+            LIMIT 300
+            """
+        ).fetchall()
+
+        messages = conn.execute(
+            """
+            SELECT phone, sequence_id, step_index, provider_status, created_at, text
+            FROM marketing_messages
+            ORDER BY id DESC
+            LIMIT 300
+            """
+        ).fetchall()
+
+    return {
+        "stats": s,
+        "customers": [dict(r) for r in customers],
+        "purchases": [dict(r) for r in purchases],
+        "messages": [dict(r) for r in messages],
+        "generated_at": to_iso(now_utc()),
+    }
+
+
+@router.get("/dashboard", response_class=HTMLResponse)
+async def dashboard_page() -> str:
+    """Dashboard pública simples para operação de marketing."""
+    return """
+<!doctype html>
+<html lang='pt-BR'>
+<head>
+  <meta charset='utf-8' />
+  <meta name='viewport' content='width=device-width, initial-scale=1' />
+  <title>Syncronix • Marketing Dashboard</title>
+  <style>
+    body { font-family: Inter, Arial, sans-serif; margin: 0; background:#0b1020; color:#e5e7eb; }
+    .wrap { max-width: 1400px; margin: 0 auto; padding: 24px; }
+    h1 { margin: 0 0 6px; font-size: 28px; }
+    .sub { color:#9ca3af; margin-bottom: 18px; }
+    .grid { display:grid; grid-template-columns: repeat(5,minmax(140px,1fr)); gap:12px; margin-bottom:18px; }
+    .card { background:#111827; border:1px solid #1f2937; border-radius:12px; padding:14px; }
+    .k { font-size:12px; color:#9ca3af; text-transform:uppercase; letter-spacing:.04em; }
+    .v { font-size:24px; font-weight:700; margin-top:4px; }
+    .tabs { display:flex; gap:8px; margin:18px 0; }
+    button { background:#1f2937; color:#e5e7eb; border:1px solid #374151; border-radius:10px; padding:8px 12px; cursor:pointer; }
+    button.active { background:#2563eb; border-color:#2563eb; }
+    table { width:100%; border-collapse:collapse; background:#111827; border:1px solid #1f2937; border-radius:12px; overflow:hidden; }
+    th, td { padding:10px 8px; border-bottom:1px solid #1f2937; font-size:13px; text-align:left; }
+    th { color:#9ca3af; font-weight:600; position:sticky; top:0; background:#111827; }
+    .box { max-height:420px; overflow:auto; border-radius:12px; }
+    .muted { color:#9ca3af; }
+    .ok { color:#34d399; }
+    .warn { color:#f59e0b; }
+    .err { color:#f87171; }
+  </style>
+</head>
+<body>
+  <div class='wrap'>
+    <h1>Syncronix Marketing Dashboard</h1>
+    <div class='sub'>Visão pública de automação de marketing (Hotmart → WhatsApp)</div>
+
+    <div class='grid'>
+      <div class='card'><div class='k'>Clientes</div><div class='v' id='customers_total'>-</div></div>
+      <div class='card'><div class='k'>Clientes ativos</div><div class='v' id='customers_active'>-</div></div>
+      <div class='card'><div class='k'>Aguardando compra</div><div class='v' id='customers_waiting_purchase'>-</div></div>
+      <div class='card'><div class='k'>Compras</div><div class='v' id='purchases_total'>-</div></div>
+      <div class='card'><div class='k'>Mensagens enviadas</div><div class='v' id='messages_sent_total'>-</div></div>
+    </div>
+
+    <div class='tabs'>
+      <button class='active' onclick='showTab("customers")' id='btn-customers'>Clientes</button>
+      <button onclick='showTab("purchases")' id='btn-purchases'>Compras</button>
+      <button onclick='showTab("messages")' id='btn-messages'>Mensagens</button>
+      <button onclick='refreshData()'>Atualizar</button>
+      <span class='muted' id='generated_at'></span>
+    </div>
+
+    <div id='tab-customers' class='box'></div>
+    <div id='tab-purchases' class='box' style='display:none'></div>
+    <div id='tab-messages' class='box' style='display:none'></div>
+  </div>
+
+<script>
+let DATA = null;
+
+function esc(v){ return (v ?? '').toString().replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+function showTab(name){
+  for (const t of ['customers','purchases','messages']){
+    document.getElementById('tab-'+t).style.display = (t===name ? 'block':'none');
+    document.getElementById('btn-'+t).classList.toggle('active', t===name);
+  }
+}
+
+function renderCustomers(rows){
+  return `<table><thead><tr>
+    <th>Telefone</th><th>Status</th><th>Sequência</th><th>Step</th><th>Próximo envio</th><th>Último produto</th><th>Atualizado</th>
+  </tr></thead><tbody>${rows.map(r=>`<tr>
+    <td>${esc(r.phone)}</td>
+    <td>${esc(r.status)}</td>
+    <td>${esc(r.current_sequence_id)}</td>
+    <td>${esc(r.current_step)}</td>
+    <td>${esc(r.next_send_at)}</td>
+    <td>${esc(r.last_product_bought)}</td>
+    <td>${esc(r.updated_at)}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+function renderPurchases(rows){
+  return `<table><thead><tr>
+    <th>Purchase ID</th><th>Telefone</th><th>Produto</th><th>Aprovado em</th><th>Criado em</th>
+  </tr></thead><tbody>${rows.map(r=>`<tr>
+    <td>${esc(r.purchase_id)}</td>
+    <td>${esc(r.phone)}</td>
+    <td>${esc(r.product)}</td>
+    <td>${esc(r.approved_at)}</td>
+    <td>${esc(r.created_at)}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+function renderMessages(rows){
+  return `<table><thead><tr>
+    <th>Telefone</th><th>Sequência</th><th>Step</th><th>Status</th><th>Criado em</th><th>Texto</th>
+  </tr></thead><tbody>${rows.map(r=>`<tr>
+    <td>${esc(r.phone)}</td>
+    <td>${esc(r.sequence_id)}</td>
+    <td>${esc(r.step_index)}</td>
+    <td>${esc(r.provider_status)}</td>
+    <td>${esc(r.created_at)}</td>
+    <td>${esc((r.text||'').slice(0,140))}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+async function refreshData(){
+  const res = await fetch('/marketing/dashboard/data', {cache:'no-store'});
+  const data = await res.json();
+  DATA = data;
+
+  const s=data.stats||{};
+  for (const k of ['customers_total','customers_active','customers_waiting_purchase','purchases_total','messages_sent_total']){
+    document.getElementById(k).textContent = s[k] ?? 0;
+  }
+  document.getElementById('generated_at').textContent = 'Atualizado em: ' + (data.generated_at || '-');
+
+  document.getElementById('tab-customers').innerHTML = renderCustomers(data.customers || []);
+  document.getElementById('tab-purchases').innerHTML = renderPurchases(data.purchases || []);
+  document.getElementById('tab-messages').innerHTML = renderMessages(data.messages || []);
+}
+
+refreshData();
+setInterval(refreshData, 30000);
+</script>
+</body></html>
+    """
