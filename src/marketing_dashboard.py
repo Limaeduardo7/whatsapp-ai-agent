@@ -410,6 +410,11 @@ def render_marketing_dashboard() -> str:
       const performance = analytics.performance || {};
       const failures = analytics.failures || [];
       const sequenceIssues = analytics.sequence_issues || [];
+      const attributedRealRevenueByCurrency = performance.attributed_real_revenue_by_currency || [];
+      const attributedBRL = (attributedRealRevenueByCurrency.find((row) => row.currency === "BRL") || {}).value;
+      const attributedCurrenciesLabel = attributedRealRevenueByCurrency.length
+        ? attributedRealRevenueByCurrency.map((row) => `${row.currency} ${row.value}`).join(" | ")
+        : "Sem receita atribuída ainda";
 
       const selectedCustomer = customers.find((row) => row.phone === selectedPhone) || customers[0] || null;
       const selectedCustomerPurchases = selectedCustomer ? purchases.filter((row) => row.phone === selectedCustomer.phone) : [];
@@ -506,7 +511,7 @@ def render_marketing_dashboard() -> str:
               <MetricCard label="Compras" value={stats.purchases_total} detail="Eventos registrados" />
               <MetricCard label="Mensagens" value={stats.messages_sent_total} detail={`${health.failed_messages || 0} falhas`} tone={(health.failed_messages || 0) > 0 ? "danger" : "default"} />
               <MetricCard label="Vendas atrib. WhatsApp" value={performance.attributed_sales_whatsapp || 0} detail="via UTM/SCK" tone="success" />
-              <MetricCard label="Receita estimada" value={formatMoney(performance.estimated_revenue)} detail={performance.revenue_configured ? "PRODUCT_PRICE_MAP ativo" : "Configure PRODUCT_PRICE_MAP"} tone="info" />
+              <MetricCard label="Receita real (tracking WA)" value={formatMoney(attributedBRL)} detail={attributedCurrenciesLabel} tone="info" />
             </section>
             <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
               <Card>
@@ -680,8 +685,9 @@ def render_marketing_dashboard() -> str:
                       <div className="text-base font-semibold">{performance.attributed_sales_whatsapp || 0}</div>
                     </div>
                     <div className="rounded-md bg-slate-50 p-2 dark:bg-slate-950">
-                      <div className="text-slate-500">Receita atribuída WA</div>
-                      <div className="text-base font-semibold">{formatMoney(performance.attributed_revenue_whatsapp)}</div>
+                      <div className="text-slate-500">Receita atribuída WA (real)</div>
+                      <div className="text-base font-semibold">{formatMoney(attributedBRL)}</div>
+                      <div className="text-[10px] text-slate-500">{attributedCurrenciesLabel}</div>
                     </div>
                   </div>
                   <div className="h-[280px]">
@@ -819,7 +825,7 @@ def render_marketing_dashboard() -> str:
                 <CardContent className="space-y-3 text-sm">
                   <div className="flex justify-between"><span className="text-slate-500">Marketing automation</span><Badge tone={health.marketing_enabled ? "success" : "warning"}>{String(!!health.marketing_enabled)}</Badge></div>
                   <div className="flex justify-between"><span className="text-slate-500">AI agent</span><Badge tone={health.ai_agent_enabled ? "success" : "warning"}>{String(!!health.ai_agent_enabled)}</Badge></div>
-                  <div className="flex justify-between"><span className="text-slate-500">Receita estimada</span><Badge tone={performance.revenue_configured ? "success" : "muted"}>{performance.revenue_configured ? "configurada" : "sem PRODUCT_PRICE_MAP"}</Badge></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Receita real tracking</span><Badge tone={(attributedRealRevenueByCurrency || []).length ? "success" : "muted"}>{(attributedRealRevenueByCurrency || []).length ? "recebendo" : "sem atribuição"}</Badge></div>
                 </CardContent>
               </Card>
               <Card>

@@ -711,6 +711,33 @@ def _extract_tracking_fields(raw_payload: Any) -> dict[str, str]:
     }
 
 
+def _extract_purchase_amount(raw_payload: Any) -> tuple[float | None, str | None]:
+    if isinstance(raw_payload, str):
+        try:
+            raw_payload = json.loads(raw_payload)
+        except Exception:
+            return None, None
+    if not isinstance(raw_payload, dict):
+        return None, None
+
+    data = raw_payload.get("data") if isinstance(raw_payload.get("data"), dict) else raw_payload
+    purchase = data.get("purchase") if isinstance(data.get("purchase"), dict) else {}
+    price = purchase.get("price") if isinstance(purchase.get("price"), dict) else {}
+
+    value = price.get("value") if isinstance(price, dict) else None
+    currency = str(price.get("currency_code") or "").strip().upper() if isinstance(price, dict) else ""
+
+    if value is None:
+        # fallback para payloads simplificados
+        value = data.get("value") or purchase.get("value")
+    try:
+        amount = float(value) if value is not None else None
+    except (TypeError, ValueError):
+        amount = None
+
+    return amount, (currency or None)
+
+
 def _sequence_validation_issues(sequences: list[dict[str, Any]]) -> list[dict[str, Any]]:
     issues: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
@@ -770,8 +797,10 @@ def _build_dashboard_analytics(
     purchases_by_tracking_source: dict[str, int] = {}
     estimated_revenue = 0.0
     has_revenue = False
+    real_revenue_by_currency: dict[str, float] = {}
     attributed_sales = 0
     attributed_revenue = 0.0
+    attributed_real_revenue_by_currency: dict[str, float] = {}
     for row in purchases:
         product = str(row.get("product") or "Sem produto")
         price = price_map.get(product.strip().lower())
@@ -785,7 +814,13 @@ def _build_dashboard_analytics(
         phone = str(row.get("phone") or "")
         purchases_by_phone[phone] = purchases_by_phone.get(phone, 0) + 1
 
-        tracking = _extract_tracking_fields(row.get("raw_payload"))
+        raw_payload = row.get("raw_payload")
+        tracking = _extract_tracking_fields(raw_payload)
+        amount, currency = _extract_purchase_amount(raw_payload)
+        if amount is not None:
+            ccy = currency or "UNK"
+            real_revenue_by_currency[ccy] = real_revenue_by_currency.get(ccy, 0.0) + amount
+
         source = (
             tracking.get("utm_source")
             or tracking.get("utm_campaign")
@@ -802,6 +837,9 @@ def _build_dashboard_analytics(
             attributed_sales += 1
             if price is not None:
                 attributed_revenue += price
+            if amount is not None:
+                ccy = currency or "UNK"
+                attributed_real_revenue_by_currency[ccy] = attributed_real_revenue_by_currency.get(ccy, 0.0) + amount
 
     customers_by_sequence: dict[str, int] = {}
     for row in customers:
@@ -863,6 +901,14 @@ def _build_dashboard_analytics(
             ],
             "attributed_sales_whatsapp": attributed_sales,
             "attributed_revenue_whatsapp": attributed_revenue if has_revenue else None,
+            "real_revenue_by_currency": [
+                {"currency": key, "value": round(value, 2)}
+                for key, value in sorted(real_revenue_by_currency.items(), key=lambda item: item[0])
+            ],
+            "attributed_real_revenue_by_currency": [
+                {"currency": key, "value": round(value, 2)}
+                for key, value in sorted(attributed_real_revenue_by_currency.items(), key=lambda item: item[0])
+            ],
             "estimated_revenue": estimated_revenue if has_revenue else None,
             "revenue_configured": has_revenue,
         },
