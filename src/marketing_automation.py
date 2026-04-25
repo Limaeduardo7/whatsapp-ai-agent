@@ -82,15 +82,28 @@ def normalize_phone(raw: str | None) -> str | None:
     if len(set(digits)) == 1:
         return None
 
-    # Brasil: adiciona DDI 55 se vier sem
-    if len(digits) == 11 and not digits.startswith("55"):
-        digits = f"55{digits}"
-    if len(digits) == 10 and not digits.startswith("55"):
+    # Se vier sem DDI e com padrão BR local (10/11), assume Brasil
+    if len(digits) in (10, 11):
         digits = f"55{digits}"
 
-    # telefone internacional típico
+    # E.164 básico
     if not (12 <= len(digits) <= 15):
         return None
+
+    # validação mais rígida para Brasil
+    if digits.startswith("55"):
+        national = digits[2:]
+        # BR deve ter DDD (2) + número (8 ou 9)
+        if len(national) not in (10, 11):
+            return None
+
+        ddd = national[:2]
+        if not ddd.isdigit() or ddd in {"00", "01", "02", "03", "04", "05", "06", "07", "08", "09"}:
+            return None
+
+        subscriber = national[2:]
+        if len(subscriber) == 9 and subscriber[0] != "9":
+            return None
 
     return digits
 
