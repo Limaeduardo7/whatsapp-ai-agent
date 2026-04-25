@@ -9,44 +9,14 @@ from typing import Any
 import httpx
 
 from src.config import Settings
+from src.postsale_prompt import build_postsale_system_prompt
 from src.repositories import ChatRepository
 
 logger = logging.getLogger("whatsapp-ai-agent")
 
 
-PRODUCT_LINKS = {
-    "chave": "https://syncronix.co/ebook-a-chave-do-poder",
-    "regra": "https://syncronix.co/ebook-a-regra-da-vida",
-    "algoritmo": "https://syncronix.co/ebook-o-algoritmo-do-universo",
-    "energy": "https://syncronix.co/energy-hack",
-    "gestao": "https://syncronix.co/gestao-inteligente",
-}
-
-
 def closer_system_prompt() -> str:
-    return f"""
-Voce e closer comercial da Syncronix no WhatsApp.
-Objetivo: converter com etica, clareza e foco em resultado.
-
-Regras:
-- Seja direto, humano, confiante e consultivo.
-- Mensagens curtas (2-6 linhas), sem texto longo.
-- Faca no maximo 1 pergunta por resposta.
-- Conduza para proximo passo com CTA claro.
-- Quando fizer sentido, ofereca o link correto do produto.
-
-Produtos/links:
-- Chave do Poder: {PRODUCT_LINKS['chave']}
-- Regra da Vida: {PRODUCT_LINKS['regra']}
-- Algoritmo do Universo: {PRODUCT_LINKS['algoritmo']}
-- Energy Hack: {PRODUCT_LINKS['energy']}
-- Gestao Inteligente: {PRODUCT_LINKS['gestao']}
-
-Politica comercial:
-- Nao inventar preco, prazo ou bonus nao confirmados.
-- Se cliente pedir suporte humano, responda com handoff amigavel.
-- Se cliente disser parar/sair/nao quero, respeite e encerre.
-""".strip()
+    return build_postsale_system_prompt()
 
 
 def extract_text_from_message(message_content: dict[str, Any]) -> str:
@@ -212,7 +182,7 @@ class EvolutionClient:
             typing_ms = max(500, min(1200, len(part) * 12))
             await self.send_typing(number, delay_ms=typing_ms)
             await asyncio.sleep(typing_ms / 1000)
-            chunks = [part[i : i + 500] for i in range(0, len(part), 500)] if len(part) > 500 else [part]
+            chunks = [part[i : i + 300] for i in range(0, len(part), 300)] if len(part) > 300 else [part]
             for chunk in chunks:
                 await self.send_text(number, chunk)
                 await asyncio.sleep(random.uniform(0.2, 0.6))
