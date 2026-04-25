@@ -2,12 +2,13 @@ from __future__ import annotations
 
 
 def render_marketing_dashboard() -> str:
-    return r"""<!doctype html>
+    _html = r"""<!doctype html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Syncronix · Marketing Ops</title>
+  <link rel="icon" type="image/webp" href="data:image/webp;base64,__ICON_B64__" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -76,6 +77,11 @@ def render_marketing_dashboard() -> str:
   </style>
 </head>
 <body class="bg-zinc-50 text-zinc-950 antialiased dark:bg-zinc-950 dark:text-zinc-50 transition-colors duration-300">
+<div id="__splash__" style="position:fixed;inset:0;z-index:9999;background:#09090b;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity 0.45s ease">
+  <img src="data:image/webp;base64,__ICON_B64__" style="width:88px;height:88px;object-fit:contain;animation:splashPulse 1.6s ease-in-out infinite" alt=""/>
+  <div style="color:#3f3f46;font-size:11px;font-family:Inter,system-ui,sans-serif;letter-spacing:0.12em;text-transform:uppercase">Carregando…</div>
+</div>
+<style>@keyframes splashPulse{0%,100%{opacity:0.5;transform:scale(0.96)}50%{opacity:1;transform:scale(1)}}</style>
 <div id="root"></div>
 
 <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
@@ -458,11 +464,7 @@ function Sidebar({page,setPage,dark,setDark,open,setOpen,collapsed,setCollapsed}
   const inner=(
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 px-5 py-5 border-b border-zinc-200/60 dark:border-zinc-800/60">
-        <div className="h-8 w-8 flex-shrink-0 rounded-xl aurora flex items-center justify-center text-white text-xs font-extrabold shadow-glow">S</div>
-        <div className="flex-1 min-w-0">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Syncronix</div>
-          <div className="text-sm font-extrabold text-zinc-900 dark:text-zinc-50 leading-tight">Marketing Ops</div>
-        </div>
+        <img src="data:image/png;base64,__LOGO_B64__" className="h-9 w-auto max-w-[148px] flex-shrink-0 object-contain" alt="Syncronix"/>
         <button onClick={()=>setCollapsed(true)} title="Recolher menu" className="hidden lg:flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><polyline points="9,2 4,7 9,12"/></svg>
         </button>
@@ -994,7 +996,11 @@ function Dashboard() {
     finally { setActLoad(false); }
   }
 
-  useEffect(()=>{ refresh({initial:true}); const id=setInterval(refresh,30000); return()=>clearInterval(id); },[]);
+  useEffect(()=>{
+    const s=document.getElementById("__splash__");
+    if(s){s.style.opacity="0";setTimeout(()=>s.remove(),480);}
+    refresh({initial:true}); const id=setInterval(refresh,30000); return()=>clearInterval(id);
+  },[]);
 
   const customers = vd.customers||[];
   const purchases = vd.purchases||[];
@@ -1248,8 +1254,8 @@ function Dashboard() {
       <Sidebar page={page} setPage={setPage} dark={dark} setDark={setDark} open={mobileOpen} setOpen={setMOpen} collapsed={sidebarCollapsed} setCollapsed={setCollapsed}/>
       {/* Botão flutuante para expandir sidebar (desktop, só quando colapsado) */}
       {sidebarCollapsed&&(
-        <button onClick={()=>setCollapsed(false)} title="Expandir menu" className="hidden lg:flex fixed top-4 left-4 z-40 h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-lg hover:scale-105 transition-transform">
-          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><polyline points="5,2 10,7 5,12"/></svg>
+        <button onClick={()=>setCollapsed(false)} title="Expandir menu" className="hidden lg:flex fixed top-3 left-3 z-40 h-12 w-12 items-center justify-center rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform bg-zinc-900 border border-zinc-800">
+          <img src="data:image/webp;base64,__ICON_B64__" className="h-9 w-9 object-contain" alt="Menu"/>
         </button>
       )}
       <MobileTopBar page={page} open={mobileOpen} setOpen={setMOpen} dark={dark} setDark={setDark}/>
@@ -1275,3 +1281,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(<Dashboard/>);
 </script>
 </body>
 </html>"""
+    try:
+        import base64 as _b64, os as _os
+        _d = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+        with open(_os.path.join(_d, "HEXACRONIX-ADESIVO-300x300.webp"), "rb") as _f:
+            _icon = _b64.b64encode(_f.read()).decode()
+        with open(_os.path.join(_d, "53c9d0b6-d91c-4826-902f-269cf93d8103.png"), "rb") as _f:
+            _logo = _b64.b64encode(_f.read()).decode()
+        _html = _html.replace("__ICON_B64__", _icon).replace("__LOGO_B64__", _logo)
+    except Exception:
+        pass
+    return _html
