@@ -376,8 +376,10 @@ async def _send_text(phone: str, text: str) -> tuple[str, str | None]:
 def _upsert_customer_after_purchase(phone: str, name: str | None, product: str, approved_at: str | None, language: str | None = None) -> dict[str, Any] | None:
     sequence = _find_sequence_for_product(product, language)
 
-    ts = to_iso(now_utc())
+    now = now_utc()
+    ts = to_iso(now)
     purchase_dt = approved_at if approved_at else ts
+    first_send_at = to_iso(now + timedelta(days=1))
 
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute(
@@ -401,7 +403,7 @@ def _upsert_customer_after_purchase(phone: str, name: str | None, product: str, 
                 sequence.get("id") if sequence else None,
                 0,
                 product,
-                ts if sequence else None,
+                first_send_at if sequence else None,
                 purchase_dt,
                 ts,
             ),
