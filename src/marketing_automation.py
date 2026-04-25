@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import sqlite3
+import unicodedata
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -110,6 +111,11 @@ def normalize_phone(raw: str | None) -> str | None:
 
 def _init_db() -> None:
     marketing_repository.init()
+    with sqlite3.connect(DB_PATH) as conn:
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(marketing_customers)").fetchall()]
+        if "language" not in cols:
+            conn.execute("ALTER TABLE marketing_customers ADD COLUMN language TEXT")
+        conn.commit()
 
 
 def _load_sequences() -> list[dict[str, Any]]:
@@ -128,13 +134,21 @@ def _normalize_language(value: Any) -> str | None:
     lang = str(value).strip().lower().replace("_", "-")
     if not lang:
         return None
-    if lang.startswith("pt") or lang in {"br", "brazil", "brasil"}:
+    if lang.startswith("pt") or lang in {"br", "brazil", "brasil", "pt-br"}:
         return "pt-BR"
-    if lang.startswith("en") or lang in {"us", "usa", "gb", "uk", "english"}:
+    if lang.startswith("en") or lang in {"us", "usa", "gb", "uk", "english", "en-us", "en-gb"}:
         return "en"
-    if lang.startswith("es") or lang in {"spanish", "espanol", "español"}:
+    if lang.startswith("es") or lang in {"spanish", "espanol", "español", "es-mx", "es-es"}:
         return "es"
     return None
+
+
+def _normalize_text(value: str | None) -> str:
+    if not value:
+        return ""
+    txt = unicodedata.normalize("NFKD", str(value)).encode("ascii", "ignore").decode("ascii")
+    txt = txt.lower()
+    return " ".join(txt.replace("_", " ").replace("-", " ").split())
 
 
 def _find_value_deep(obj: Any, names: set[str]) -> Any:
@@ -155,32 +169,89 @@ def _find_value_deep(obj: Any, names: set[str]) -> Any:
     return None
 
 
+def _language_from_country(value: Any) -> str | None:
+    if value is None:
+        return None
+    country = str(value).strip().lower()
+    if not country:
+        return None
+    if country in {"br", "brazil", "brasil"}:
+        return "pt-BR"
+    if country in {"us", "usa", "gb", "uk", "ca", "au"}:
+        return "en"
+    if country in {"es", "mx", "ar", "co", "cl", "pe", "uy", "py", "bo", "ec", "ve", "do", "gt", "hn", "ni", "sv", "pa", "cr"}:
+        return "es"
+    return None
+
+
+def _language_from_product_alias(product_name: str | None) -> str | None:
+    product_norm = _normalize_text(product_name)
+    if not product_norm:
+        return None
+    best_score = -1
+    best_langs: set[str] = set()
+    for seq in _load_sequences():
+        lang = _normalize_language(seq.get("language"))
+        if not lang:
+            continue
+        for trigger in seq.get("trigger_products", []):
+            trig = _normalize_text(str(trigger))
+            if not trig:
+                continue
+            if trig in product_norm or product_norm in trig:
+                score = len(trig)
+                if score > best_score:
+                    best_score = score
+                    best_langs = {lang}
+                elif score == best_score:
+                    best_langs.add(lang)
+    if len(best_langs) == 1:
+        return next(iter(best_langs))
+    return None
+
+
 def _detect_language(payload: dict[str, Any], product_name: str | None) -> str | None:
-    explicit = _find_value_deep(payload, {"language", "lang", "locale", "country", "currency"})
+    # 1) explicit language/locale fields
+    explicit = _find_value_deep(payload, {"language", "lang", "locale"})
     language = _normalize_language(explicit)
     if language:
         return language
 
-    product_l = (product_name or "").lower()
-    if any(token in product_l for token in ["the ", "chameleon", "rule of life", "algorithm of the universe", "master state", "quantum leap"]):
+    # 2) product alias map (sequence triggers)
+    language = _language_from_product_alias(product_name)
+    if language:
+        return language
+
+    # 3) keyword heuristic on normalized product name
+    product_l = _normalize_text(product_name)
+    if any(token in product_l for token in ["the key to power", "chameleon", "rule of life", "algorithm of the universe", "master state", "quantum leap", "mastering inner demons"]):
         return "en"
-    if any(token in product_l for token in ["la ", "el ", "clave", "regla", "algoritmo del", "camaleón", "camaleon", "maestro", "cuántico", "cuantico"]):
+    if any(token in product_l for token in ["la clave", "la regla", "algoritmo del", "camaleon", "estado maestro", "salto cuantico", "reprogramacion", "guia practica", "demonios internos"]):
         return "es"
-    if any(token in product_l for token in ["chave", "regra", "algoritmo do", "estado mestre", "salto quântico", "salto quantico"]):
+    if any(token in product_l for token in ["a chave", "a regra", "algoritmo do", "estado mestre", "salto quantico", "reprogramacao", "guia pratico", "demonios internos"]):
         return "pt-BR"
-    return None
+
+    # 4) country fallback
+    country = _find_value_deep(payload, {"country", "country_code", "country_iso"})
+    language = _language_from_country(country)
+    if language:
+        return language
+
+    # 5) safe default
+    return "pt-BR"
 
 
 def _find_sequence_for_product(product_name: str, language: str | None = None) -> dict[str, Any] | None:
-    product_name_l = product_name.lower().strip()
+    product_name_l = _normalize_text(product_name)
     candidates = []
     for seq in _load_sequences():
-        triggers = [p.lower().strip() for p in seq.get("trigger_products", [])]
-        if any(tp in product_name_l or product_name_l in tp for tp in triggers):
+        triggers = [_normalize_text(str(p)) for p in seq.get("trigger_products", [])]
+        if any(tp and (tp in product_name_l or product_name_l in tp) for tp in triggers):
             candidates.append(seq)
     if language:
+        lang_norm = _normalize_language(language)
         for seq in candidates:
-            if seq.get("language") == language:
+            if _normalize_language(seq.get("language")) == lang_norm:
                 return seq
     if candidates:
         return candidates[0]
@@ -386,8 +457,18 @@ async def _send_text(phone: str, text: str) -> tuple[str, str | None]:
     return provider_status, provider_id
 
 
+def _get_customer_language(phone: str) -> str | None:
+    with sqlite3.connect(DB_PATH) as conn:
+        row = conn.execute("SELECT language FROM marketing_customers WHERE phone = ?", (phone,)).fetchone()
+    if row and row[0]:
+        return _normalize_language(row[0])
+    return None
+
+
 def _upsert_customer_after_purchase(phone: str, name: str | None, product: str, approved_at: str | None, language: str | None = None) -> dict[str, Any] | None:
-    sequence = _find_sequence_for_product(product, language)
+    locked_language = _get_customer_language(phone)
+    effective_language = locked_language or _normalize_language(language) or _detect_language({"data": {"product": {"name": product}}}, product)
+    sequence = _find_sequence_for_product(product, effective_language)
 
     now = now_utc()
     ts = to_iso(now)
@@ -397,8 +478,8 @@ def _upsert_customer_after_purchase(phone: str, name: str | None, product: str, 
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute(
             """
-            INSERT INTO marketing_customers (phone, name, status, current_sequence_id, current_step, last_product_bought, next_send_at, last_purchase_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO marketing_customers (phone, name, status, current_sequence_id, current_step, last_product_bought, next_send_at, last_purchase_at, updated_at, language)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(phone) DO UPDATE SET
               name=excluded.name,
               status=excluded.status,
@@ -407,7 +488,8 @@ def _upsert_customer_after_purchase(phone: str, name: str | None, product: str, 
               last_product_bought=excluded.last_product_bought,
               next_send_at=excluded.next_send_at,
               last_purchase_at=excluded.last_purchase_at,
-              updated_at=excluded.updated_at
+              updated_at=excluded.updated_at,
+              language=COALESCE(marketing_customers.language, excluded.language)
             """,
             (
                 phone,
@@ -419,6 +501,7 @@ def _upsert_customer_after_purchase(phone: str, name: str | None, product: str, 
                 first_send_at if sequence else None,
                 purchase_dt,
                 ts,
+                effective_language,
             ),
         )
         conn.commit()
