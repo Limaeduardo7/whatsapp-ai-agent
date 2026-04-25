@@ -663,20 +663,238 @@ async def stats() -> dict[str, Any]:
     return marketing_repository.stats()
 
 
+def _load_price_map() -> dict[str, float]:
+    raw = os.getenv("PRODUCT_PRICE_MAP", "{}")
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    prices: dict[str, float] = {}
+    for product, value in data.items():
+        try:
+            prices[str(product).strip().lower()] = float(value)
+        except (TypeError, ValueError):
+            continue
+    return prices
+
+
+def _row_dicts(rows: list[sqlite3.Row]) -> list[dict[str, Any]]:
+    return [dict(row) for row in rows]
+
+
+def _sequence_validation_issues(sequences: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    issues: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
+    for seq in sequences:
+        seq_id = str(seq.get("id") or "sem_id")
+        language = seq.get("language")
+        if seq_id in seen_ids:
+            issues.append({"severity": "error", "sequence_id": seq_id, "message": "ID duplicado."})
+        seen_ids.add(seq_id)
+        if language not in {"pt-BR", "en", "es"}:
+            issues.append({"severity": "warning", "sequence_id": seq_id, "message": "Idioma ausente ou inválido."})
+        if not seq.get("target_product"):
+            issues.append({"severity": "error", "sequence_id": seq_id, "message": "Produto alvo ausente."})
+        if not seq.get("trigger_products"):
+            issues.append({"severity": "error", "sequence_id": seq_id, "message": "Gatilhos ausentes."})
+        steps = seq.get("steps") or []
+        if not steps:
+            issues.append({"severity": "error", "sequence_id": seq_id, "message": "Sequência sem mensagens."})
+        for index, step in enumerate(steps):
+            text = str(step.get("text") or "")
+            if len(text) > 300:
+                issues.append({"severity": "warning", "sequence_id": seq_id, "step": index, "message": f"Mensagem com {len(text)} caracteres."})
+            if not any(term in text.upper() for term in ["SAIR", "STOP", "SALIR"]):
+                issues.append({"severity": "warning", "sequence_id": seq_id, "step": index, "message": "Opt-out ausente."})
+            if not step.get("delay_hours_after"):
+                issues.append({"severity": "info", "sequence_id": seq_id, "step": index, "message": "Delay não configurado explicitamente."})
+    return issues
+
+
+def _build_dashboard_analytics(
+    customers: list[dict[str, Any]],
+    purchases: list[dict[str, Any]],
+    messages: list[dict[str, Any]],
+    sequences: list[dict[str, Any]],
+) -> dict[str, Any]:
+    price_map = _load_price_map()
+    sequence_lengths = {seq.get("id"): len(seq.get("steps") or []) for seq in sequences}
+    completed_customers = [
+        row
+        for row in customers
+        if row.get("status") == "waiting_purchase"
+        or int(row.get("current_step") or 0) >= sequence_lengths.get(row.get("current_sequence_id"), 9999)
+    ]
+    failed_messages = [
+        row
+        for row in messages
+        if any(token in str(row.get("provider_status") or "").lower() for token in ["fail", "error", "timeout", "denied"])
+    ]
+    successful_messages = [
+        row
+        for row in messages
+        if row not in failed_messages and str(row.get("provider_status") or "").strip()
+    ]
+
+    purchases_by_product: dict[str, dict[str, Any]] = {}
+    purchases_by_phone: dict[str, int] = {}
+    estimated_revenue = 0.0
+    has_revenue = False
+    for row in purchases:
+        product = str(row.get("product") or "Sem produto")
+        price = price_map.get(product.strip().lower())
+        if price is not None:
+            estimated_revenue += price
+            has_revenue = True
+        entry = purchases_by_product.setdefault(product, {"product": product, "count": 0, "estimated_revenue": 0.0})
+        entry["count"] += 1
+        if price is not None:
+            entry["estimated_revenue"] += price
+        phone = str(row.get("phone") or "")
+        purchases_by_phone[phone] = purchases_by_phone.get(phone, 0) + 1
+
+    customers_by_sequence: dict[str, int] = {}
+    for row in customers:
+        seq_id = str(row.get("current_sequence_id") or "Sem sequência")
+        customers_by_sequence[seq_id] = customers_by_sequence.get(seq_id, 0) + 1
+
+    messages_by_sequence: dict[str, dict[str, Any]] = {}
+    for row in messages:
+        seq_id = str(row.get("sequence_id") or "Sem sequência")
+        entry = messages_by_sequence.setdefault(seq_id, {"sequence_id": seq_id, "sent": 0, "failed": 0})
+        entry["sent"] += 1
+        if row in failed_messages:
+            entry["failed"] += 1
+
+    step_counts: dict[int, int] = {}
+    for row in messages:
+        try:
+            step = int(row.get("step_index") or 0)
+        except (TypeError, ValueError):
+            step = 0
+        step_counts[step] = step_counts.get(step, 0) + 1
+
+    last_purchase_at = max((row.get("created_at") or row.get("approved_at") or "" for row in purchases), default="")
+    last_message_at = max((row.get("created_at") or "" for row in messages), default="")
+
+    return {
+        "funnel": [
+            {"stage": "Compras aprovadas", "value": len(purchases)},
+            {"stage": "Sequência iniciada", "value": len([row for row in customers if row.get("current_sequence_id")])},
+            {"stage": "Step 1 enviado", "value": step_counts.get(0, 0)},
+            {"stage": "Step 2 enviado", "value": step_counts.get(1, 0)},
+            {"stage": "Step 3 enviado", "value": step_counts.get(2, 0)},
+            {"stage": "Nova compra", "value": len([phone for phone, count in purchases_by_phone.items() if phone and count > 1])},
+            {"stage": "Sequência concluída", "value": len(completed_customers)},
+        ],
+        "health": {
+            "status": "attention" if failed_messages else "ok",
+            "marketing_enabled": settings.marketing_automation_enabled,
+            "ai_agent_enabled": settings.ai_agent_enabled,
+            "scheduler_interval_seconds": SCHEDULER_INTERVAL_SECONDS,
+            "sequences_count": len(sequences),
+            "last_purchase_at": last_purchase_at,
+            "last_message_at": last_message_at,
+            "failed_messages": len(failed_messages),
+            "successful_messages": len(successful_messages),
+            "active_customers": len([row for row in customers if row.get("status") == "active"]),
+            "completed_customers": len(completed_customers),
+        },
+        "performance": {
+            "customers_by_sequence": [
+                {"sequence_id": key, "customers": value}
+                for key, value in sorted(customers_by_sequence.items(), key=lambda item: item[1], reverse=True)
+            ],
+            "messages_by_sequence": sorted(messages_by_sequence.values(), key=lambda item: item["sent"], reverse=True),
+            "purchases_by_product": sorted(purchases_by_product.values(), key=lambda item: item["count"], reverse=True),
+            "estimated_revenue": estimated_revenue if has_revenue else None,
+            "revenue_configured": has_revenue,
+        },
+        "failures": failed_messages[:50],
+        "sequence_issues": _sequence_validation_issues(sequences),
+    }
+
+
+def _set_customer_state(phone: str, *, status: str, current_step: int | None = None, next_send_at: str | None = None) -> None:
+    marketing_repository.init()
+    fields = ["status = ?", "next_send_at = ?", "updated_at = ?"]
+    values: list[Any] = [status, next_send_at, to_iso(now_utc())]
+    if current_step is not None:
+        fields.insert(1, "current_step = ?")
+        values.insert(1, current_step)
+    values.append(phone)
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(f"UPDATE marketing_customers SET {', '.join(fields)} WHERE phone = ?", values)
+        conn.commit()
+
+
+@router.post("/automation/customers/{phone}/pause", dependencies=[Depends(require_admin_api_key)])
+async def pause_customer(phone: str) -> dict[str, Any]:
+    _set_customer_state(phone, status="paused", next_send_at=None)
+    return {"status": "ok", "phone": phone, "action": "paused"}
+
+
+@router.post("/automation/customers/{phone}/reactivate", dependencies=[Depends(require_admin_api_key)])
+async def reactivate_customer(phone: str) -> dict[str, Any]:
+    _set_customer_state(phone, status="active", next_send_at=to_iso(now_utc()))
+    return {"status": "ok", "phone": phone, "action": "reactivated"}
+
+
+@router.post("/automation/customers/{phone}/restart", dependencies=[Depends(require_admin_api_key)])
+async def restart_customer_sequence(phone: str) -> dict[str, Any]:
+    _set_customer_state(phone, status="active", current_step=0, next_send_at=to_iso(now_utc()))
+    return {"status": "ok", "phone": phone, "action": "restarted"}
+
+
+@router.post("/automation/customers/{phone}/force-next", dependencies=[Depends(require_admin_api_key)])
+async def force_next_customer_message(phone: str) -> dict[str, Any]:
+    _set_customer_state(phone, status="active", next_send_at=to_iso(now_utc()))
+    return {"status": "ok", "phone": phone, "action": "force_next"}
+
+
+@router.post("/automation/customers/{phone}/opt-out", dependencies=[Depends(require_admin_api_key)])
+async def opt_out_customer(phone: str) -> dict[str, Any]:
+    marketing_repository.init()
+    ts = to_iso(now_utc())
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            """
+            INSERT INTO chat_profiles (phone, opted_out, updated_at, last_seen_at)
+            VALUES (?, 1, ?, ?)
+            ON CONFLICT(phone) DO UPDATE SET
+              opted_out=1,
+              updated_at=excluded.updated_at,
+              last_seen_at=excluded.last_seen_at
+            """,
+            (phone, ts, ts),
+        )
+        conn.execute(
+            "UPDATE marketing_customers SET status='opted_out', next_send_at=NULL, updated_at=? WHERE phone=?",
+            (ts, phone),
+        )
+        conn.commit()
+    return {"status": "ok", "phone": phone, "action": "opted_out"}
+
+
 @router.get("/dashboard/data")
 async def dashboard_data() -> dict[str, Any]:
     """Dashboard público (somente leitura): métricas + tabelas resumidas."""
     marketing_repository.init()
     s = marketing_repository.stats()
+    sequences = _load_sequences()
 
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
 
         customers = conn.execute(
             """
-            SELECT phone, status, current_sequence_id, current_step, next_send_at, last_product_bought, updated_at
-            FROM marketing_customers
-            ORDER BY datetime(updated_at) DESC
+            SELECT mc.phone, mc.name, mc.status, mc.current_sequence_id, mc.current_step, mc.next_send_at,
+                   mc.last_product_bought, mc.last_purchase_at, mc.updated_at, COALESCE(cp.opted_out, 0) AS opted_out
+            FROM marketing_customers mc
+            LEFT JOIN chat_profiles cp ON cp.phone = mc.phone
+            ORDER BY datetime(mc.updated_at) DESC
             LIMIT 200
             """
         ).fetchall()
@@ -692,18 +910,24 @@ async def dashboard_data() -> dict[str, Any]:
 
         messages = conn.execute(
             """
-            SELECT phone, sequence_id, step_index, provider_status, created_at, text
+            SELECT id, phone, sequence_id, step_index, provider_status, provider_message_id, created_at, text
             FROM marketing_messages
             ORDER BY id DESC
             LIMIT 300
             """
         ).fetchall()
 
+    customers_data = _row_dicts(customers)
+    purchases_data = _row_dicts(purchases)
+    messages_data = _row_dicts(messages)
+
     return {
         "stats": s,
-        "customers": [dict(r) for r in customers],
-        "purchases": [dict(r) for r in purchases],
-        "messages": [dict(r) for r in messages],
+        "customers": customers_data,
+        "purchases": purchases_data,
+        "messages": messages_data,
+        "sequences": sequences,
+        "analytics": _build_dashboard_analytics(customers_data, purchases_data, messages_data, sequences),
         "generated_at": to_iso(now_utc()),
     }
 
