@@ -1,51 +1,56 @@
-import os
-import json
-import sqlite3
-import logging
 import asyncio
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Tuple
+import json
+import logging
+import os
+import sqlite3
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import httpx
-from fastapi import APIRouter, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, Request
+
+from src.config import get_settings
+from src.repositories import MarketingRepository
+from src.security import require_admin_api_key, validate_shared_secret
+from src.services import EvolutionClient
 
 logger = logging.getLogger("marketing-automation")
 
 router = APIRouter(prefix="/marketing", tags=["marketing"])
 
-DB_PATH = os.getenv("DB_PATH", "./data/agent.db")
-EVOLUTION_BASE_URL = os.getenv("EVOLUTION_BASE_URL", "http://127.0.0.1:8080")
-EVOLUTION_INSTANCE = os.getenv("EVOLUTION_INSTANCE", "default")
-EVOLUTION_API_KEY = os.getenv("EVOLUTION_API_KEY", "")
-HOTMART_WEBHOOK_SECRET = os.getenv("HOTMART_WEBHOOK_SECRET", "")
-SEQUENCES_FILE = os.getenv("SEQUENCES_FILE", "./data/automation_sequences.json")
-SCHEDULER_INTERVAL_SECONDS = int(os.getenv("SCHEDULER_INTERVAL_SECONDS", "30"))
+settings = get_settings()
+marketing_repository = MarketingRepository(settings)
+evolution_client = EvolutionClient(settings)
+DB_PATH = settings.db_path
+EVOLUTION_BASE_URL = settings.evolution_base_url
+EVOLUTION_INSTANCE = settings.evolution_instance
+EVOLUTION_API_KEY = settings.evolution_api_key
+HOTMART_WEBHOOK_SECRET = settings.hotmart_webhook_secret
+SCHEDULER_INTERVAL_SECONDS = settings.scheduler_interval_seconds
+HOTMART_CLIENT_ID = settings.hotmart_client_id
+HOTMART_CLIENT_SECRET = settings.hotmart_client_secret
+HOTMART_BASIC_TOKEN = settings.hotmart_basic_token
+HOTMART_AUTH_URL = settings.hotmart_auth_url
+HOTMART_API_BASE = settings.hotmart_api_base
 
-# Hotmart API fallback (sales-users)
-HOTMART_CLIENT_ID = os.getenv("HOTMART_CLIENT_ID", "")
-HOTMART_CLIENT_SECRET = os.getenv("HOTMART_CLIENT_SECRET", "")
-HOTMART_BASIC_TOKEN = os.getenv("HOTMART_BASIC_TOKEN", "").replace("Basic ", "").strip()
-HOTMART_AUTH_URL = os.getenv("HOTMART_AUTH_URL", "https://api-sec-vlc.hotmart.com/security/oauth/token")
-HOTMART_API_BASE = os.getenv("HOTMART_API_BASE", "https://developers.hotmart.com/payments/api/v1")
+HOTMART_TOKEN_CACHE: dict[str, Any] = {"access_token": None, "expires_at": 0}
 
-HOTMART_TOKEN_CACHE: Dict[str, Any] = {"access_token": None, "expires_at": 0}
-
-_scheduler_task: Optional[asyncio.Task] = None
+_scheduler_task: asyncio.Task | None = None
 
 
 def now_utc() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def to_iso(dt: datetime) -> str:
-    return dt.astimezone(timezone.utc).isoformat()
+    return dt.astimezone(UTC).isoformat()
 
 
 def from_iso(value: str) -> datetime:
-    return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(timezone.utc)
+    return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(UTC)
 
 
-def normalize_phone(raw: Optional[str]) -> Optional[str]:
+def normalize_phone(raw: str | None) -> str | None:
     if raw is None:
         return None
 
@@ -89,70 +94,20 @@ def normalize_phone(raw: Optional[str]) -> Optional[str]:
 
 
 def _init_db() -> None:
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS marketing_customers (
-                phone TEXT PRIMARY KEY,
-                name TEXT,
-                status TEXT NOT NULL DEFAULT 'idle',
-                current_sequence_id TEXT,
-                current_step INTEGER DEFAULT 0,
-                last_product_bought TEXT,
-                next_send_at TEXT,
-                last_purchase_at TEXT,
-                updated_at TEXT NOT NULL
-            )
-            """
-        )
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS marketing_purchases (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                purchase_id TEXT,
-                phone TEXT NOT NULL,
-                product TEXT NOT NULL,
-                approved_at TEXT,
-                raw_payload TEXT NOT NULL,
-                created_at TEXT NOT NULL
-            )
-            """
-        )
-        conn.execute(
-            """
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_marketing_purchase_unique
-            ON marketing_purchases(purchase_id, phone, product)
-            """
-        )
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS marketing_messages (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                phone TEXT NOT NULL,
-                sequence_id TEXT NOT NULL,
-                step_index INTEGER NOT NULL,
-                text TEXT NOT NULL,
-                provider_status TEXT,
-                provider_message_id TEXT,
-                created_at TEXT NOT NULL
-            )
-            """
-        )
-        conn.commit()
+    marketing_repository.init()
 
 
-def _load_sequences() -> List[Dict[str, Any]]:
-    if not os.path.exists(SEQUENCES_FILE):
+def _load_sequences() -> list[dict[str, Any]]:
+    if not os.path.exists(settings.sequences_file):
         return []
-    with open(SEQUENCES_FILE, "r", encoding="utf-8") as f:
+    with open(settings.sequences_file, encoding="utf-8") as f:
         data = json.load(f)
     if isinstance(data, dict):
         return data.get("sequences", [])
     return data if isinstance(data, list) else []
 
 
-def _find_sequence_for_product(product_name: str) -> Optional[Dict[str, Any]]:
+def _find_sequence_for_product(product_name: str) -> dict[str, Any] | None:
     product_name_l = product_name.lower().strip()
     for seq in _load_sequences():
         triggers = [p.lower().strip() for p in seq.get("trigger_products", [])]
@@ -161,7 +116,7 @@ def _find_sequence_for_product(product_name: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def _find_phone_deep(obj: Any) -> Optional[str]:
+def _find_phone_deep(obj: Any) -> str | None:
     """Procura telefone em qualquer nível do payload (phone/cell/whatsapp/mobile)."""
     if isinstance(obj, dict):
         # prioridade por chaves conhecidas
@@ -203,7 +158,7 @@ def _find_phone_deep(obj: Any) -> Optional[str]:
     return None
 
 
-def _extract_hotmart_fields(payload: Dict[str, Any]) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str], str]:
+def _extract_hotmart_fields(payload: dict[str, Any]) -> tuple[str | None, str | None, str | None, str | None, str]:
     event = str(payload.get("event") or payload.get("event_name") or payload.get("type") or "").lower()
 
     data = payload.get("data") if isinstance(payload.get("data"), dict) else payload
@@ -263,12 +218,12 @@ def _hotmart_basic_token() -> str:
         return HOTMART_BASIC_TOKEN
     if HOTMART_CLIENT_ID and HOTMART_CLIENT_SECRET:
         import base64
-        raw = f"{HOTMART_CLIENT_ID}:{HOTMART_CLIENT_SECRET}".encode("utf-8")
+        raw = f"{HOTMART_CLIENT_ID}:{HOTMART_CLIENT_SECRET}".encode()
         return base64.b64encode(raw).decode("utf-8")
     return ""
 
 
-async def _hotmart_access_token() -> Optional[str]:
+async def _hotmart_access_token() -> str | None:
     now_ts = int(now_utc().timestamp())
     cached = HOTMART_TOKEN_CACHE.get("access_token")
     if cached and HOTMART_TOKEN_CACHE.get("expires_at", 0) > now_ts + 60:
@@ -298,7 +253,7 @@ async def _hotmart_access_token() -> Optional[str]:
     return str(token)
 
 
-async def _phone_from_sales_users(transaction: Optional[str]) -> Optional[str]:
+async def _phone_from_sales_users(transaction: str | None) -> str | None:
     if not transaction:
         return None
 
@@ -338,7 +293,7 @@ async def _phone_from_sales_users(transaction: Optional[str]) -> Optional[str]:
     return None
 
 
-async def _send_text(phone: str, text: str) -> Tuple[str, Optional[str]]:
+async def _send_text(phone: str, text: str) -> tuple[str, str | None]:
     if not EVOLUTION_API_KEY:
         raise RuntimeError("EVOLUTION_API_KEY ausente")
 
@@ -359,7 +314,7 @@ async def _send_text(phone: str, text: str) -> Tuple[str, Optional[str]]:
     return provider_status, provider_id
 
 
-def _upsert_customer_after_purchase(phone: str, name: Optional[str], product: str, approved_at: Optional[str]) -> Optional[Dict[str, Any]]:
+def _upsert_customer_after_purchase(phone: str, name: str | None, product: str, approved_at: str | None) -> dict[str, Any] | None:
     sequence = _find_sequence_for_product(product)
 
     ts = to_iso(now_utc())
@@ -397,7 +352,7 @@ def _upsert_customer_after_purchase(phone: str, name: Optional[str], product: st
     return sequence
 
 
-def _save_purchase(purchase_id: Optional[str], phone: str, product: str, approved_at: Optional[str], raw_payload: Dict[str, Any]) -> None:
+def _save_purchase(purchase_id: str | None, phone: str, product: str, approved_at: str | None, raw_payload: dict[str, Any]) -> None:
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute(
             """
@@ -416,7 +371,7 @@ def _save_purchase(purchase_id: Optional[str], phone: str, product: str, approve
         conn.commit()
 
 
-def _get_due_customers(limit: int = 50) -> List[sqlite3.Row]:
+def _get_due_customers(limit: int = 50) -> list[sqlite3.Row]:
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         rows = conn.execute(
@@ -435,11 +390,11 @@ def _get_due_customers(limit: int = 50) -> List[sqlite3.Row]:
     return rows
 
 
-def _get_sequence_map() -> Dict[str, Dict[str, Any]]:
+def _get_sequence_map() -> dict[str, dict[str, Any]]:
     return {seq.get("id"): seq for seq in _load_sequences() if seq.get("id")}
 
 
-def _update_customer_state(phone: str, *, step: int, next_send_at: Optional[str], status: str) -> None:
+def _update_customer_state(phone: str, *, step: int, next_send_at: str | None, status: str) -> None:
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute(
             """
@@ -452,7 +407,7 @@ def _update_customer_state(phone: str, *, step: int, next_send_at: Optional[str]
         conn.commit()
 
 
-def _store_message_log(phone: str, sequence_id: str, step_index: int, text: str, provider_status: str, provider_message_id: Optional[str]) -> None:
+def _store_message_log(phone: str, sequence_id: str, step_index: int, text: str, provider_status: str, provider_message_id: str | None) -> None:
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute(
             """
@@ -467,7 +422,7 @@ def _store_message_log(phone: str, sequence_id: str, step_index: int, text: str,
 def _already_sent_marketing_today(phone: str) -> bool:
     """Regra comercial: no máximo 1 mensagem de marketing por dia por contato (UTC)."""
     now = now_utc()
-    day_start = datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
+    day_start = datetime(now.year, now.month, now.day, tzinfo=UTC)
     with sqlite3.connect(DB_PATH) as conn:
         row = conn.execute(
             "SELECT COUNT(*) FROM marketing_messages WHERE phone = ? AND datetime(created_at) >= datetime(?)",
@@ -574,14 +529,12 @@ def stop_scheduler() -> None:
 @router.post("/hotmart/webhook")
 async def hotmart_webhook(
     request: Request,
-    x_hotmart_hottok: Optional[str] = Header(default=None),
-) -> Dict[str, Any]:
+    x_hotmart_hottok: str | None = Header(default=None),
+) -> dict[str, Any]:
     payload = await request.json()
 
     # validação simples de segredo
-    if HOTMART_WEBHOOK_SECRET:
-        if not x_hotmart_hottok or x_hotmart_hottok != HOTMART_WEBHOOK_SECRET:
-            raise HTTPException(status_code=401, detail="invalid_hotmart_signature")
+    validate_shared_secret(x_hotmart_hottok, HOTMART_WEBHOOK_SECRET, "invalid_hotmart_signature")
 
     phone, product, purchase_id, approved_at, event = _extract_hotmart_fields(payload)
 
@@ -624,24 +577,12 @@ async def hotmart_webhook(
     }
 
 
-@router.post("/automation/run-once")
-async def run_once() -> Dict[str, Any]:
+@router.post("/automation/run-once", dependencies=[Depends(require_admin_api_key)])
+async def run_once() -> dict[str, Any]:
     await _process_due_customers_once()
     return {"status": "ok"}
 
 
-@router.get("/automation/stats")
-async def stats() -> Dict[str, Any]:
-    with sqlite3.connect(DB_PATH) as conn:
-        total_customers = conn.execute("SELECT COUNT(*) FROM marketing_customers").fetchone()[0]
-        active = conn.execute("SELECT COUNT(*) FROM marketing_customers WHERE status='active'").fetchone()[0]
-        waiting = conn.execute("SELECT COUNT(*) FROM marketing_customers WHERE status='waiting_purchase'").fetchone()[0]
-        purchases = conn.execute("SELECT COUNT(*) FROM marketing_purchases").fetchone()[0]
-        messages = conn.execute("SELECT COUNT(*) FROM marketing_messages").fetchone()[0]
-    return {
-        "customers_total": total_customers,
-        "customers_active": active,
-        "customers_waiting_purchase": waiting,
-        "purchases_total": purchases,
-        "messages_sent_total": messages,
-    }
+@router.get("/automation/stats", dependencies=[Depends(require_admin_api_key)])
+async def stats() -> dict[str, Any]:
+    return marketing_repository.stats()
