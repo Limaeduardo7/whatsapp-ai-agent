@@ -150,6 +150,12 @@ function groupCount(rows, fn) {
   for(const r of rows){const k=fn(r)||"Sem valor";m.set(k,(m.get(k)||0)+1);}
   return [...m.entries()].map(([name,value])=>({name,value}));
 }
+function isInRange(dateStr, range) {
+  if (range==="all") return true;
+  const d=new Date(dateStr);
+  if (isNaN(d)) return false;
+  return d >= new Date(Date.now()-parseInt(range)*86400000);
+}
 function buildDaily(purchases, messages) {
   const m=new Map();
   const add=(items,field)=>{
@@ -409,19 +415,35 @@ function PH({title,desc,children}) {
   );
 }
 
-function Controls({query,setQuery,statusFilter,setStatusFilter,customers,showStatus,onRefresh,refreshing}) {
+function Controls({query,setQuery,statusFilter,setStatusFilter,customers,showStatus,onRefresh,refreshing,dateRange,setDateRange,seqFilter,setSeqFilter,sequences,showDateRange,showSeqFilter}) {
+  const seqIds=useMemo(()=>[...new Set((sequences||[]).map(s=>s.id).filter(Boolean))],[sequences]);
+  const cols=["1fr", showStatus&&"160px", showSeqFilter&&"160px", showDateRange&&"130px", "auto"].filter(Boolean).join(" ");
   return (
-    <div className={cn("grid gap-2.5",showStatus?"sm:grid-cols-[1fr_160px_auto]":"sm:grid-cols-[1fr_auto]")}>
-      <div className="relative">
+    <div className="flex flex-wrap gap-2">
+      <div className="relative flex-1 min-w-[180px]">
         <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
         <Input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar…" className="pl-8"/>
       </div>
       {showStatus&&(
-        <Select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}>
+        <Select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} className="w-40">
           <option value="all">Todos os status</option>
           {[...new Set(customers.map(r=>r.status).filter(Boolean))].map(s=><option key={s} value={s}>{s}</option>)}
+        </Select>
+      )}
+      {showSeqFilter&&(
+        <Select value={seqFilter} onChange={e=>setSeqFilter(e.target.value)} className="w-44">
+          <option value="all">Todas as sequências</option>
+          {seqIds.map(id=><option key={id} value={id}>{id}</option>)}
+        </Select>
+      )}
+      {showDateRange&&(
+        <Select value={dateRange} onChange={e=>setDateRange(e.target.value)} className="w-36">
+          <option value="all">Qualquer data</option>
+          <option value="7">Últimos 7 dias</option>
+          <option value="14">Últimos 14 dias</option>
+          <option value="30">Últimos 30 dias</option>
         </Select>
       )}
       <Btn onClick={onRefresh} disabled={refreshing}>
@@ -432,15 +454,18 @@ function Controls({query,setQuery,statusFilter,setStatusFilter,customers,showSta
 }
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
-function Sidebar({page,setPage,dark,setDark,open,setOpen}) {
+function Sidebar({page,setPage,dark,setDark,open,setOpen,collapsed,setCollapsed}) {
   const inner=(
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 px-5 py-5 border-b border-zinc-200/60 dark:border-zinc-800/60">
         <div className="h-8 w-8 flex-shrink-0 rounded-xl aurora flex items-center justify-center text-white text-xs font-extrabold shadow-glow">S</div>
-        <div>
+        <div className="flex-1 min-w-0">
           <div className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Syncronix</div>
           <div className="text-sm font-extrabold text-zinc-900 dark:text-zinc-50 leading-tight">Marketing Ops</div>
         </div>
+        <button onClick={()=>setCollapsed(true)} title="Recolher menu" className="hidden lg:flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><polyline points="9,2 4,7 9,12"/></svg>
+        </button>
       </div>
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         <div className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-zinc-400">Navegação</div>
@@ -466,7 +491,7 @@ function Sidebar({page,setPage,dark,setDark,open,setOpen}) {
   );
   return (
     <>
-      <aside className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:w-64 lg:flex-col z-30 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">{inner}</aside>
+      <aside className={cn("hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:w-64 lg:flex-col z-30 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 transition-all",collapsed&&"lg:hidden")}>{inner}</aside>
       {open&&(
         <div className="lg:hidden fixed inset-0 z-40 flex">
           <div className="fixed inset-0 bg-zinc-950/60 backdrop-blur-sm" onClick={()=>setOpen(false)}/>
@@ -927,9 +952,12 @@ function Dashboard() {
   const [page,setPage]        = useState("overview");
   const [query,setQuery]      = useState("");
   const [statusFilter,setSF]  = useState("all");
+  const [dateRange,setDateRange] = useState("all");
+  const [seqFilter,setSeqFilter] = useState("all");
+  const [sidebarCollapsed,setCollapsed] = useState(false);
   const [selPhone,setSelPhone]= useState("");
   const [adminKey,setAdminKey]= useState(()=>localStorage.getItem("mk_admin")||"");
-  const [dark,setDark]        = useState(()=>localStorage.getItem("mk_theme")==="dark");
+  const [dark,setDark]        = useState(()=>localStorage.getItem("mk_theme")!=="light");
   const [mobileOpen,setMOpen] = useState(false);
   const [actLoad,setActLoad]  = useState(false);
   const {toasts,add:toast}    = useToast();
@@ -988,11 +1016,19 @@ function Dashboard() {
 
   const filtC = useMemo(()=>customers.filter(r=>{
     const ms=statusFilter==="all"||r.status===statusFilter;
+    const sq=seqFilter==="all"||r.current_sequence_id===seqFilter;
     const hay=`${r.phone||""} ${r.name||""} ${r.current_sequence_id||""} ${r.last_product_bought||""}`.toLowerCase();
-    return ms&&hay.includes(query.toLowerCase());
-  }),[customers,query,statusFilter]);
-  const filtP = useMemo(()=>purchases.filter(r=>`${r.phone||""} ${r.purchase_id||""} ${r.product||""}`.toLowerCase().includes(query.toLowerCase())),[purchases,query]);
-  const filtM = useMemo(()=>messages.filter(r=>`${r.phone||""} ${r.sequence_id||""} ${r.provider_status||""} ${r.text||""}`.toLowerCase().includes(query.toLowerCase())),[messages,query]);
+    return ms&&sq&&hay.includes(query.toLowerCase());
+  }),[customers,query,statusFilter,seqFilter]);
+  const filtP = useMemo(()=>purchases.filter(r=>{
+    const text=`${r.phone||""} ${r.purchase_id||""} ${r.product||""}`.toLowerCase().includes(query.toLowerCase());
+    return text&&isInRange(r.approved_at||r.created_at,dateRange);
+  }),[purchases,query,dateRange]);
+  const filtM = useMemo(()=>messages.filter(r=>{
+    const text=`${r.phone||""} ${r.sequence_id||""} ${r.provider_status||""} ${r.text||""}`.toLowerCase().includes(query.toLowerCase());
+    const sq=seqFilter==="all"||r.sequence_id===seqFilter;
+    return text&&sq&&isInRange(r.created_at,dateRange);
+  }),[messages,query,seqFilter,dateRange]);
 
   const topSeqData=(perf.customers_by_sequence||[]).slice(0,8).map(r=>({name:r.sequence_id,value:r.customers}));
 
@@ -1032,7 +1068,7 @@ function Dashboard() {
     if(page==="contacts") return (
       <div className="space-y-4 page-enter">
         <PH title="Contatos" desc="Operação por contato, histórico e ações manuais."/>
-        <Controls query={query} setQuery={setQuery} statusFilter={statusFilter} setStatusFilter={setSF} customers={customers} showStatus onRefresh={refresh} refreshing={refreshing}/>
+        <Controls query={query} setQuery={setQuery} statusFilter={statusFilter} setStatusFilter={setSF} customers={customers} showStatus sequences={sequences} seqFilter={seqFilter} setSeqFilter={setSeqFilter} showSeqFilter onRefresh={refresh} refreshing={refreshing}/>
         <div className="grid gap-4 xl:grid-cols-[1.4fr_0.8fr]">
           <Card>
             <CardH><CardT>Base de contatos</CardT><CardD>{filtC.length} encontrados · coluna Score = engajamento 0–100</CardD></CardH>
@@ -1053,7 +1089,7 @@ function Dashboard() {
       return (
         <div className="space-y-4 page-enter">
           <PH title="Compras" desc="Eventos Hotmart recebidos e produtos comprados."/>
-          <Controls query={query} setQuery={setQuery} statusFilter={statusFilter} setStatusFilter={setSF} customers={customers} showStatus={false} onRefresh={refresh} refreshing={refreshing}/>
+          <Controls query={query} setQuery={setQuery} statusFilter={statusFilter} setStatusFilter={setSF} customers={customers} showStatus={false} sequences={sequences} dateRange={dateRange} setDateRange={setDateRange} showDateRange onRefresh={refresh} refreshing={refreshing}/>
           <div className="grid gap-4 xl:grid-cols-[1fr_0.9fr]">
             <Card><CardH><CardT>Compras recentes</CardT><CardD>{filtP.length} registros</CardD></CardH><CardC><Table columns={colP} rows={filtP} empty="Nenhuma compra" emptyDesc="Aguarde eventos."/></CardC></Card>
             <div className="space-y-4">
@@ -1083,7 +1119,7 @@ function Dashboard() {
     if(page==="messages") return (
       <div className="space-y-4 page-enter">
         <PH title="Mensagens" desc="Envios recentes, status e falhas."/>
-        <Controls query={query} setQuery={setQuery} statusFilter={statusFilter} setStatusFilter={setSF} customers={customers} showStatus onRefresh={refresh} refreshing={refreshing}/>
+        <Controls query={query} setQuery={setQuery} statusFilter={statusFilter} setStatusFilter={setSF} customers={customers} showStatus sequences={sequences} seqFilter={seqFilter} setSeqFilter={setSeqFilter} showSeqFilter dateRange={dateRange} setDateRange={setDateRange} showDateRange onRefresh={refresh} refreshing={refreshing}/>
         <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
           <Card><CardH><CardT>Mensagens recentes</CardT><CardD>{filtM.length} registros</CardD></CardH><CardC><Table columns={colM} rows={filtM} empty="Nenhuma mensagem" emptyDesc="Aguarde eventos."/></CardC></Card>
           <Card>
@@ -1151,7 +1187,7 @@ function Dashboard() {
                   {(seq.steps||[]).map((step,i)=>(
                     <div key={i} className="rounded-xl bg-zinc-50 dark:bg-zinc-800/50 p-3">
                       <div className="mb-1.5 flex justify-between text-[10px] font-bold text-zinc-400 uppercase tracking-wider"><span>Step {i+1}</span><span>{(step.text||"").length} chars</span></div>
-                      <div className="whitespace-pre-wrap text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">{step.text}</div>
+                      <div className="whitespace-pre-wrap break-words text-xs leading-relaxed text-zinc-600 dark:text-zinc-400 overflow-hidden max-h-40 overflow-y-auto">{step.text}</div>
                     </div>
                   ))}
                 </CardC>
@@ -1209,9 +1245,15 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen">
-      <Sidebar page={page} setPage={setPage} dark={dark} setDark={setDark} open={mobileOpen} setOpen={setMOpen}/>
+      <Sidebar page={page} setPage={setPage} dark={dark} setDark={setDark} open={mobileOpen} setOpen={setMOpen} collapsed={sidebarCollapsed} setCollapsed={setCollapsed}/>
+      {/* Botão flutuante para expandir sidebar (desktop, só quando colapsado) */}
+      {sidebarCollapsed&&(
+        <button onClick={()=>setCollapsed(false)} title="Expandir menu" className="hidden lg:flex fixed top-4 left-4 z-40 h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-lg hover:scale-105 transition-transform">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><polyline points="5,2 10,7 5,12"/></svg>
+        </button>
+      )}
       <MobileTopBar page={page} open={mobileOpen} setOpen={setMOpen} dark={dark} setDark={setDark}/>
-      <main className="lg:ml-64 min-h-screen pt-14 pb-20 lg:pt-0 lg:pb-0">
+      <main className={cn("min-h-screen pt-14 pb-20 lg:pt-0 lg:pb-0 transition-all duration-300", sidebarCollapsed?"lg:ml-0":"lg:ml-64")}>
         <div className="mx-auto max-w-[1400px] space-y-5 px-4 py-5 lg:px-6 lg:py-6">
           {error&&(
             <div className="flex items-start gap-3 rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-700 dark:text-red-400">
