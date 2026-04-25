@@ -499,12 +499,13 @@ def render_marketing_dashboard() -> str:
                 </CardContent>
               </Card>
             )}
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-7">
               <MetricCard label="Clientes" value={stats.customers_total} detail="Base monitorada" />
               <MetricCard label="Ativos" value={stats.customers_active} detail="Sequência em andamento" tone="success" />
               <MetricCard label="Aguardando compra" value={stats.customers_waiting_purchase} detail="Fim da jornada" tone="warning" />
               <MetricCard label="Compras" value={stats.purchases_total} detail="Eventos registrados" />
               <MetricCard label="Mensagens" value={stats.messages_sent_total} detail={`${health.failed_messages || 0} falhas`} tone={(health.failed_messages || 0) > 0 ? "danger" : "default"} />
+              <MetricCard label="Vendas atrib. WhatsApp" value={performance.attributed_sales_whatsapp || 0} detail="via UTM/SCK" tone="success" />
               <MetricCard label="Receita estimada" value={formatMoney(performance.estimated_revenue)} detail={performance.revenue_configured ? "PRODUCT_PRICE_MAP ativo" : "Configure PRODUCT_PRICE_MAP"} tone="info" />
             </section>
             <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
@@ -671,17 +672,39 @@ def render_marketing_dashboard() -> str:
                 <CardContent>{loading ? <SkeletonBlock /> : <DataTable columns={purchaseColumns} rows={filteredPurchases} emptyTitle="Nenhuma compra encontrada" emptyDescription="Compras aprovadas aparecerão aqui." />}</CardContent>
               </Card>
               <Card>
-                <CardHeader><CardTitle>Produtos</CardTitle><CardDescription>Volume e receita estimada quando configurada.</CardDescription></CardHeader>
-                <CardContent className="h-[420px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={(performance.purchases_by_product || []).slice(0, 10)} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis type="number" allowDecimals={false} stroke="#64748b" fontSize={12} />
-                      <YAxis type="category" dataKey="product" width={170} stroke="#64748b" fontSize={11} />
-                      <Tooltip />
-                      <Bar dataKey="count" fill="#2563eb" radius={[0, 6, 6, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                <CardHeader><CardTitle>Produtos e tracking</CardTitle><CardDescription>Volume por produto + atribuição WhatsApp.</CardDescription></CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="rounded-md bg-slate-50 p-2 dark:bg-slate-950">
+                      <div className="text-slate-500">Vendas atribuídas WA</div>
+                      <div className="text-base font-semibold">{performance.attributed_sales_whatsapp || 0}</div>
+                    </div>
+                    <div className="rounded-md bg-slate-50 p-2 dark:bg-slate-950">
+                      <div className="text-slate-500">Receita atribuída WA</div>
+                      <div className="text-base font-semibold">{formatMoney(performance.attributed_revenue_whatsapp)}</div>
+                    </div>
+                  </div>
+                  <div className="h-[280px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={(performance.purchases_by_product || []).slice(0, 8)} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                        <XAxis type="number" allowDecimals={false} stroke="#64748b" fontSize={12} />
+                        <YAxis type="category" dataKey="product" width={160} stroke="#64748b" fontSize={11} />
+                        <Tooltip />
+                        <Bar dataKey="count" fill="#2563eb" radius={[0, 6, 6, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div>
+                    <div className="mb-2 text-xs font-medium text-slate-500">Top origens de tracking</div>
+                    <div className="space-y-1 text-xs">
+                      {(performance.purchases_by_tracking_source || []).slice(0, 5).map((row) => (
+                        <div key={row.source} className="flex items-center justify-between rounded-md bg-slate-50 px-2 py-1 dark:bg-slate-950">
+                          <span className="truncate pr-2">{row.source}</span><Badge tone="muted">{row.count}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </section>

@@ -684,6 +684,33 @@ def _row_dicts(rows: list[sqlite3.Row]) -> list[dict[str, Any]]:
     return [dict(row) for row in rows]
 
 
+def _extract_tracking_fields(raw_payload: Any) -> dict[str, str]:
+    if isinstance(raw_payload, str):
+        try:
+            raw_payload = json.loads(raw_payload)
+        except Exception:
+            return {}
+    if not isinstance(raw_payload, dict):
+        return {}
+
+    data = raw_payload.get("data") if isinstance(raw_payload.get("data"), dict) else raw_payload
+    purchase = data.get("purchase") if isinstance(data.get("purchase"), dict) else {}
+    tracking = purchase.get("tracking") if isinstance(purchase.get("tracking"), dict) else {}
+
+    def _get(obj: dict[str, Any], key: str) -> str:
+        val = obj.get(key)
+        return str(val).strip() if val is not None else ""
+
+    return {
+        "utm_source": _get(data, "utm_source") or _get(tracking, "utm_source"),
+        "utm_medium": _get(data, "utm_medium") or _get(tracking, "utm_medium"),
+        "utm_campaign": _get(data, "utm_campaign") or _get(tracking, "utm_campaign"),
+        "utm_content": _get(data, "utm_content") or _get(tracking, "utm_content"),
+        "sck": _get(data, "sck") or _get(tracking, "source_sck"),
+        "external_code": _get(tracking, "external_code"),
+    }
+
+
 def _sequence_validation_issues(sequences: list[dict[str, Any]]) -> list[dict[str, Any]]:
     issues: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
@@ -740,8 +767,11 @@ def _build_dashboard_analytics(
 
     purchases_by_product: dict[str, dict[str, Any]] = {}
     purchases_by_phone: dict[str, int] = {}
+    purchases_by_tracking_source: dict[str, int] = {}
     estimated_revenue = 0.0
     has_revenue = False
+    attributed_sales = 0
+    attributed_revenue = 0.0
     for row in purchases:
         product = str(row.get("product") or "Sem produto")
         price = price_map.get(product.strip().lower())
@@ -754,6 +784,24 @@ def _build_dashboard_analytics(
             entry["estimated_revenue"] += price
         phone = str(row.get("phone") or "")
         purchases_by_phone[phone] = purchases_by_phone.get(phone, 0) + 1
+
+        tracking = _extract_tracking_fields(row.get("raw_payload"))
+        source = (
+            tracking.get("utm_source")
+            or tracking.get("utm_campaign")
+            or tracking.get("sck")
+            or tracking.get("external_code")
+            or "sem_tracking"
+        )
+        source_norm = source.strip().lower()
+        purchases_by_tracking_source[source_norm] = purchases_by_tracking_source.get(source_norm, 0) + 1
+
+        sck = (tracking.get("sck") or "").lower()
+        utm_source = (tracking.get("utm_source") or "").lower()
+        if ("wa_" in sck) or (utm_source == "whatsapp"):
+            attributed_sales += 1
+            if price is not None:
+                attributed_revenue += price
 
     customers_by_sequence: dict[str, int] = {}
     for row in customers:
@@ -809,6 +857,12 @@ def _build_dashboard_analytics(
             ],
             "messages_by_sequence": sorted(messages_by_sequence.values(), key=lambda item: item["sent"], reverse=True),
             "purchases_by_product": sorted(purchases_by_product.values(), key=lambda item: item["count"], reverse=True),
+            "purchases_by_tracking_source": [
+                {"source": key, "count": value}
+                for key, value in sorted(purchases_by_tracking_source.items(), key=lambda item: item[1], reverse=True)
+            ],
+            "attributed_sales_whatsapp": attributed_sales,
+            "attributed_revenue_whatsapp": attributed_revenue if has_revenue else None,
             "estimated_revenue": estimated_revenue if has_revenue else None,
             "revenue_configured": has_revenue,
         },
@@ -901,7 +955,7 @@ async def dashboard_data() -> dict[str, Any]:
 
         purchases = conn.execute(
             """
-            SELECT purchase_id, phone, product, approved_at, created_at
+            SELECT purchase_id, phone, product, approved_at, created_at, raw_payload
             FROM marketing_purchases
             ORDER BY id DESC
             LIMIT 300
@@ -921,13 +975,16 @@ async def dashboard_data() -> dict[str, Any]:
     purchases_data = _row_dicts(purchases)
     messages_data = _row_dicts(messages)
 
+    analytics = _build_dashboard_analytics(customers_data, purchases_data, messages_data, sequences)
+    purchases_public = [{k: v for k, v in row.items() if k != "raw_payload"} for row in purchases_data]
+
     return {
         "stats": s,
         "customers": customers_data,
-        "purchases": purchases_data,
+        "purchases": purchases_public,
         "messages": messages_data,
         "sequences": sequences,
-        "analytics": _build_dashboard_analytics(customers_data, purchases_data, messages_data, sequences),
+        "analytics": analytics,
         "generated_at": to_iso(now_utc()),
     }
 
