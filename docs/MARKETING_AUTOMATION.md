@@ -3,7 +3,7 @@
 ## Fluxo
 
 ```text
-Hotmart purchase approved
+Purchase approved (Hotmart, CRM, ERP ou outra fonte)
   -> POST /marketing/hotmart/webhook
   -> extrai telefone, produto e transacao
   -> registra compra no SQLite

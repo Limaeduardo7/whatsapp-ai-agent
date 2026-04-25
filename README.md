@@ -1,6 +1,8 @@
 # WhatsApp AI Agent
 
-Agente de atendimento comercial para WhatsApp usando Evolution API, FastAPI, LLM OpenAI-compatible e automacao Hotmart.
+Agente de atendimento comercial para WhatsApp usando Evolution API, FastAPI, LLM OpenAI-compatible e automação de pós-venda.
+
+> A fonte de compras **não precisa ser Hotmart**: pode ser CRM do cliente, ERP, gateway próprio ou outra plataforma, desde que envie o payload no contrato esperado do webhook de compras.
 
 ## Funcionalidades
 
@@ -88,6 +90,13 @@ Quando `EVOLUTION_WEBHOOK_SECRET` estiver configurado, os webhooks da Evolution 
 - `POST /marketing/automation/customers/{phone}/restart`: reinicia a sequencia do contato, protegido por admin key.
 - `POST /marketing/automation/customers/{phone}/force-next`: agenda envio imediato, protegido por admin key.
 - `POST /marketing/automation/customers/{phone}/opt-out`: marca opt-out manual, protegido por admin key.
+
+## Documentação operacional
+
+- Runbook de deploy multi-servidor: `docs/DEPLOY_RUNBOOK.md`
+- Referência completa de variáveis: `docs/ENV_REFERENCE.md`
+- Configuração técnica: `docs/AGENT_CONFIG.md`
+- Automação de marketing: `docs/MARKETING_AUTOMATION.md`
 
 ## Docker
 
