@@ -38,6 +38,8 @@ Campos:
 - Cada contato recebe no maximo 1 mensagem de marketing por dia.
 - Contatos com opt-out persistido em `chat_profiles.opted_out` nao recebem novas mensagens.
 - Se uma sequencia terminar, o contato fica em `waiting_purchase` ou repete o ultimo passo quando `repeat_last_every_hours` estiver configurado.
+- Sequencias sao separadas por idioma (`pt-BR`, `en`, `es`) e seguem a mesma esteira do prompt pos-venda.
+- Produtos com nome ambíguo, como `Energy Hack`, usam idioma explícito do payload quando disponível.
 
 ## Principios de copy
 
@@ -45,7 +47,7 @@ Campos:
 - Dar uma dica pratica antes de vender.
 - Fazer ponte logica entre o produto comprado e o proximo produto.
 - Usar CTA direto, sem pressao artificial.
-- Encerrar a sequencia com opt-out claro.
+- Incluir opt-out claro em todas as mensagens.
 - Evitar repeticao infinita de lembrete para preservar reputacao do numero.
 
 ## Producao

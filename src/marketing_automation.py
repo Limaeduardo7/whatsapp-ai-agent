@@ -108,12 +108,68 @@ def _load_sequences() -> list[dict[str, Any]]:
     return data if isinstance(data, list) else []
 
 
-def _find_sequence_for_product(product_name: str) -> dict[str, Any] | None:
+def _normalize_language(value: Any) -> str | None:
+    if value is None:
+        return None
+    lang = str(value).strip().lower().replace("_", "-")
+    if not lang:
+        return None
+    if lang.startswith("pt") or lang in {"br", "brazil", "brasil"}:
+        return "pt-BR"
+    if lang.startswith("en") or lang in {"us", "usa", "gb", "uk", "english"}:
+        return "en"
+    if lang.startswith("es") or lang in {"spanish", "espanol", "español"}:
+        return "es"
+    return None
+
+
+def _find_value_deep(obj: Any, names: set[str]) -> Any:
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            normalized_key = str(key).lower()
+            if normalized_key in names:
+                return value
+        for value in obj.values():
+            found = _find_value_deep(value, names)
+            if found is not None:
+                return found
+    elif isinstance(obj, list):
+        for value in obj:
+            found = _find_value_deep(value, names)
+            if found is not None:
+                return found
+    return None
+
+
+def _detect_language(payload: dict[str, Any], product_name: str | None) -> str | None:
+    explicit = _find_value_deep(payload, {"language", "lang", "locale", "country", "currency"})
+    language = _normalize_language(explicit)
+    if language:
+        return language
+
+    product_l = (product_name or "").lower()
+    if any(token in product_l for token in ["the ", "chameleon", "rule of life", "algorithm of the universe", "master state", "quantum leap"]):
+        return "en"
+    if any(token in product_l for token in ["la ", "el ", "clave", "regla", "algoritmo del", "camaleón", "camaleon", "maestro", "cuántico", "cuantico"]):
+        return "es"
+    if any(token in product_l for token in ["chave", "regra", "algoritmo do", "estado mestre", "salto quântico", "salto quantico"]):
+        return "pt-BR"
+    return None
+
+
+def _find_sequence_for_product(product_name: str, language: str | None = None) -> dict[str, Any] | None:
     product_name_l = product_name.lower().strip()
+    candidates = []
     for seq in _load_sequences():
         triggers = [p.lower().strip() for p in seq.get("trigger_products", [])]
         if any(tp in product_name_l or product_name_l in tp for tp in triggers):
-            return seq
+            candidates.append(seq)
+    if language:
+        for seq in candidates:
+            if seq.get("language") == language:
+                return seq
+    if candidates:
+        return candidates[0]
     return None
 
 
@@ -159,7 +215,7 @@ def _find_phone_deep(obj: Any) -> str | None:
     return None
 
 
-def _extract_hotmart_fields(payload: dict[str, Any]) -> tuple[str | None, str | None, str | None, str | None, str]:
+def _extract_hotmart_fields(payload: dict[str, Any]) -> tuple[str | None, str | None, str | None, str | None, str, str | None]:
     event = str(payload.get("event") or payload.get("event_name") or payload.get("type") or "").lower()
 
     data = payload.get("data") if isinstance(payload.get("data"), dict) else payload
@@ -210,8 +266,9 @@ def _extract_hotmart_fields(payload: dict[str, Any]) -> tuple[str | None, str | 
     product = next((str(v).strip() for v in product_candidates if v), None)
     purchase_id = next((str(v).strip() for v in purchase_id_candidates if v), None)
     approved_at = next((str(v).strip() for v in approved_at_candidates if v), None)
+    language = _detect_language(payload, product)
 
-    return phone, product, purchase_id, approved_at, event
+    return phone, product, purchase_id, approved_at, event, language
 
 
 def _hotmart_basic_token() -> str:
@@ -315,8 +372,8 @@ async def _send_text(phone: str, text: str) -> tuple[str, str | None]:
     return provider_status, provider_id
 
 
-def _upsert_customer_after_purchase(phone: str, name: str | None, product: str, approved_at: str | None) -> dict[str, Any] | None:
-    sequence = _find_sequence_for_product(product)
+def _upsert_customer_after_purchase(phone: str, name: str | None, product: str, approved_at: str | None, language: str | None = None) -> dict[str, Any] | None:
+    sequence = _find_sequence_for_product(product, language)
 
     ts = to_iso(now_utc())
     purchase_dt = approved_at if approved_at else ts
@@ -537,7 +594,7 @@ async def hotmart_webhook(
     # validação simples de segredo
     validate_shared_secret(x_hotmart_hottok, HOTMART_WEBHOOK_SECRET, "invalid_hotmart_signature")
 
-    phone, product, purchase_id, approved_at, event = _extract_hotmart_fields(payload)
+    phone, product, purchase_id, approved_at, event, language = _extract_hotmart_fields(payload)
 
     # fallback oficial: sales-users por transaction
     if not phone:
@@ -568,12 +625,13 @@ async def hotmart_webhook(
             name = buyer.get("name")
 
     _save_purchase(purchase_id, phone, product, approved_at, payload)
-    sequence = _upsert_customer_after_purchase(phone, name, product, approved_at)
+    sequence = _upsert_customer_after_purchase(phone, name, product, approved_at, language)
 
     return {
         "status": "ok",
         "phone": phone,
         "product": product,
+        "language": language,
         "sequence_started": sequence.get("id") if sequence else None,
     }
 

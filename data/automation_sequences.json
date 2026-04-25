@@ -1,106 +1,278 @@
 {
   "sequences": [
     {
-      "id": "seq_chave_para_regra",
-      "name": "Cross-sell consultivo: Chave do Poder -> Regra da Vida",
-      "goal": "Converter comprador da Chave do Poder para o metodo pratico de execucao diaria.",
-      "trigger_products": ["chave do poder", "la clave del poder", "the key of power"],
-      "target_product": "A Regra da Vida",
+      "id": "seq_pt_chave_para_efeito",
+      "name": "PT-BR: A Chave do Poder -> O Efeito Camaleão",
+      "language": "pt-BR",
+      "goal": "Conduzir comprador da Chave do Poder ao próximo produto lógico da esteira.",
+      "trigger_products": ["a chave do poder", "chave do poder"],
+      "target_product": "O Efeito Camaleão",
       "repeat_last_every_hours": 0,
       "steps": [
         {
-          "text": "Parabens pela sua compra da Chave do Poder.\n\nEla te da clareza sobre direcao, decisao e poder pessoal.\n\nO proximo passo natural e transformar essa clareza em rotina. E exatamente esse o papel da Regra da Vida.\n\nAqui esta o acesso: https://syncronix.co/ebook-a-regra-da-vida",
+          "text": "Parabéns pela compra da Chave do Poder.\n\nEla trabalha clareza e direção. O próximo passo lógico é adaptação estratégica: O Efeito Camaleão.\n\nhttps://pay.hotmart.com/V95856841S?checkoutMode=10\n\nPara parar, responda SAIR.",
           "delay_hours_after": 2
         },
         {
-          "text": "Uma forma simples de aplicar a Chave do Poder hoje:\n\nEscolha 1 decisao que voce vem adiando e escreva o primeiro passo concreto para executar ainda nas proximas 24h.\n\nA Regra da Vida aprofunda isso com um metodo diario para manter constancia.\n\nLink direto: https://syncronix.co/ebook-a-regra-da-vida",
+          "text": "Uma clareza só vira resultado quando você sabe se adaptar ao ambiente.\n\nO Efeito Camaleão aprofunda essa habilidade sem perder identidade.\n\nhttps://pay.hotmart.com/V95856841S?checkoutMode=10\n\nPara parar, responda SAIR.",
           "delay_hours_after": 24
         },
         {
-          "text": "Muita gente entende a teoria, mas perde resultado na execucao.\n\nA Regra da Vida foi pensada para fechar essa lacuna: menos impulso, mais disciplina aplicada.\n\nSe voce quer continuar a jornada com um plano pratico, este e o caminho:\nhttps://syncronix.co/ebook-a-regra-da-vida",
+          "text": "Último lembrete desta sequência.\n\nDepois da Chave do Poder, O Efeito Camaleão é o próximo passo da esteira Syncronix.\n\nhttps://pay.hotmart.com/V95856841S?checkoutMode=10\n\nPara parar, responda SAIR.",
           "delay_hours_after": 48
-        },
-        {
-          "text": "Ultima mensagem desta sequencia.\n\nSe a Chave do Poder te deu clareza, a Regra da Vida te ajuda a sustentar essa clareza no dia a dia.\n\nAcesse aqui: https://syncronix.co/ebook-a-regra-da-vida\n\nSe nao quiser receber lembretes, responda SAIR.",
-          "delay_hours_after": 72
         }
       ]
     },
     {
-      "id": "seq_regra_para_algoritmo",
-      "name": "Cross-sell consultivo: Regra da Vida -> Algoritmo do Universo",
-      "goal": "Levar comprador da Regra da Vida para uma camada de leitura estrategica da realidade.",
-      "trigger_products": ["regra da vida", "regla de la vida", "rule of life"],
+      "id": "seq_en_key_para_chameleon",
+      "name": "EN: The Key to Power -> Chameleon Effect",
+      "language": "en",
+      "goal": "Move The Key to Power buyers to the next logical product.",
+      "trigger_products": ["the key to power", "the key of power", "key to power"],
+      "target_product": "Chameleon Effect",
+      "repeat_last_every_hours": 0,
+      "steps": [
+        {
+          "text": "Congrats on getting The Key to Power.\n\nIt builds clarity and direction. The next logical step is strategic adaptation: Chameleon Effect.\n\nhttps://pay.hotmart.com/V97814040Y\n\nTo stop, reply STOP.",
+          "delay_hours_after": 2
+        },
+        {
+          "text": "Clarity becomes stronger when you can adapt without losing yourself.\n\nChameleon Effect develops that next layer.\n\nhttps://pay.hotmart.com/V97814040Y\n\nTo stop, reply STOP.",
+          "delay_hours_after": 24
+        },
+        {
+          "text": "Final reminder in this sequence.\n\nAfter The Key to Power, Chameleon Effect is the next step in the Syncronix path.\n\nhttps://pay.hotmart.com/V97814040Y\n\nTo stop, reply STOP.",
+          "delay_hours_after": 48
+        }
+      ]
+    },
+    {
+      "id": "seq_es_clave_para_camaleon",
+      "name": "ES: La Clave del Poder -> Efecto Camaleón",
+      "language": "es",
+      "goal": "Conducir comprador de La Clave del Poder al próximo producto lógico.",
+      "trigger_products": ["la clave del poder", "clave del poder"],
+      "target_product": "Efecto Camaleón",
+      "repeat_last_every_hours": 0,
+      "steps": [
+        {
+          "text": "Felicitaciones por tu compra de La Clave del Poder.\n\nTrabaja claridad y dirección. El siguiente paso lógico es adaptación estratégica: Efecto Camaleón.\n\nhttps://pay.hotmart.com/E98979562N\n\nPara parar, responde SALIR.",
+          "delay_hours_after": 2
+        },
+        {
+          "text": "La claridad gana fuerza cuando sabes adaptarte sin perder tu identidad.\n\nEfecto Camaleón desarrolla esa próxima capa.\n\nhttps://pay.hotmart.com/E98979562N\n\nPara parar, responde SALIR.",
+          "delay_hours_after": 24
+        },
+        {
+          "text": "Último recordatorio de esta secuencia.\n\nDespués de La Clave del Poder, Efecto Camaleón es el próximo paso de Syncronix.\n\nhttps://pay.hotmart.com/E98979562N\n\nPara parar, responde SALIR.",
+          "delay_hours_after": 48
+        }
+      ]
+    },
+    {
+      "id": "seq_pt_regra_para_algoritmo",
+      "name": "PT-BR: A Regra da Vida -> O Algoritmo do Universo",
+      "language": "pt-BR",
+      "goal": "Conduzir comprador da Regra da Vida ao Algoritmo do Universo.",
+      "trigger_products": ["a regra da vida", "regra da vida"],
       "target_product": "O Algoritmo do Universo",
       "repeat_last_every_hours": 0,
       "steps": [
         {
-          "text": "Boa escolha com A Regra da Vida.\n\nEla organiza comportamento, disciplina e execucao.\n\nO proximo nivel e entender os padroes por tras das decisoes e resultados. Esse e o foco do Algoritmo do Universo.\n\nAcesse aqui: https://syncronix.co/ebook-o-algoritmo-do-universo",
+          "text": "Boa escolha com A Regra da Vida.\n\nEla organiza comportamento e execução. O próximo passo é entender os padrões por trás dos resultados: O Algoritmo do Universo.\n\nhttps://syncronix.co/ebook-o-algoritmo-do-universo\n\nPara parar, responda SAIR.",
           "delay_hours_after": 4
         },
         {
-          "text": "Uma pergunta util para hoje:\n\nO que esta se repetindo na sua vida que talvez nao seja azar, mas padrao?\n\nO Algoritmo do Universo trabalha exatamente essa leitura: perceber o sistema antes de agir no escuro.\n\nLink direto: https://syncronix.co/ebook-o-algoritmo-do-universo",
+          "text": "Disciplina sem leitura correta pode virar esforço mal direcionado.\n\nO Algoritmo do Universo ajuda a agir com mais contexto e precisão.\n\nhttps://syncronix.co/ebook-o-algoritmo-do-universo\n\nPara parar, responda SAIR.",
           "delay_hours_after": 24
         },
         {
-          "text": "Disciplina sem leitura correta pode virar esforco mal direcionado.\n\nDepois da Regra da Vida, o Algoritmo do Universo ajuda voce a tomar decisoes com mais contexto, precisao e estrategia.\n\nVeja aqui: https://syncronix.co/ebook-o-algoritmo-do-universo",
+          "text": "Encerrando esta sequência.\n\nDepois da Regra da Vida, o próximo passo lógico é O Algoritmo do Universo.\n\nhttps://syncronix.co/ebook-o-algoritmo-do-universo\n\nPara parar, responda SAIR.",
           "delay_hours_after": 48
-        },
-        {
-          "text": "Encerrando esta sequencia.\n\nSe voce quer ir alem da execucao e entender melhor os padroes que moldam resultado, o proximo passo e o Algoritmo do Universo.\n\nAcesse: https://syncronix.co/ebook-o-algoritmo-do-universo\n\nPara parar lembretes, responda SAIR.",
-          "delay_hours_after": 72
         }
       ]
     },
     {
-      "id": "seq_algoritmo_para_energy",
-      "name": "Cross-sell consultivo: Algoritmo do Universo -> Energy Hack",
-      "goal": "Conectar leitura estrategica com energia e performance diaria.",
-      "trigger_products": ["algoritmo do universo", "algorithm of the universe", "algoritmo del universo"],
-      "target_product": "Energy Hack",
+      "id": "seq_en_rule_para_algorithm",
+      "name": "EN: The Rule of Life -> The Algorithm of the Universe",
+      "language": "en",
+      "goal": "Move Rule of Life buyers to The Algorithm of the Universe.",
+      "trigger_products": ["the rule of life", "rule of life"],
+      "target_product": "The Algorithm of the Universe",
       "repeat_last_every_hours": 0,
       "steps": [
         {
-          "text": "Excelente avancar com O Algoritmo do Universo.\n\nDepois de entender melhor os padroes, vem uma pergunta pratica: voce tem energia suficiente para agir no nivel que deseja?\n\nO Energy Hack foi criado para essa parte da jornada.\n\nAcesse aqui: https://syncronix.co/energy-hack",
-          "delay_hours_after": 6
+          "text": "Good choice with The Rule of Life.\n\nIt organizes behavior and execution. The next step is reading the patterns behind results: The Algorithm of the Universe.\n\nhttps://syncronix.co/ebook-o-algoritmo-do-universo/\n\nTo stop, reply STOP.",
+          "delay_hours_after": 4
         },
         {
-          "text": "Um ajuste simples para observar hoje:\n\nAntes de tentar produzir mais, identifique o que mais drena sua energia: excesso de decisao, sono ruim, ambiente ou falta de foco.\n\nO Energy Hack aprofunda esse diagnostico com aplicacao pratica.\n\nLink: https://syncronix.co/energy-hack",
+          "text": "Discipline without the right reading can become misplaced effort.\n\nThe Algorithm of the Universe helps you act with more context and precision.\n\nhttps://syncronix.co/ebook-o-algoritmo-do-universo/\n\nTo stop, reply STOP.",
           "delay_hours_after": 24
         },
         {
-          "text": "Estrategia sem energia vira plano parado.\n\nO Energy Hack entra como ponte entre clareza mental e execucao com vitalidade.\n\nSe esse e seu momento, veja aqui:\nhttps://syncronix.co/energy-hack",
+          "text": "Closing this sequence.\n\nAfter The Rule of Life, the next logical step is The Algorithm of the Universe.\n\nhttps://syncronix.co/ebook-o-algoritmo-do-universo/\n\nTo stop, reply STOP.",
           "delay_hours_after": 48
-        },
-        {
-          "text": "Ultimo lembrete sobre o Energy Hack.\n\nSe voce quer sustentar decisao, foco e execucao com mais energia, este e o proximo passo recomendado.\n\nAcesse: https://syncronix.co/energy-hack\n\nPara parar lembretes, responda SAIR.",
-          "delay_hours_after": 72
         }
       ]
     },
     {
-      "id": "seq_energy_para_gestao",
-      "name": "Cross-sell consultivo: Energy Hack -> Gestao Inteligente",
-      "goal": "Levar comprador de performance pessoal para organizacao e gestao de resultados.",
-      "trigger_products": ["energy hack"],
-      "target_product": "Gestao Inteligente",
+      "id": "seq_es_regla_para_algoritmo",
+      "name": "ES: La Regla de la Vida -> El Algoritmo del Universo",
+      "language": "es",
+      "goal": "Conducir comprador de La Regla de la Vida al Algoritmo del Universo.",
+      "trigger_products": ["la regla de la vida", "regla de la vida"],
+      "target_product": "El Algoritmo del Universo",
       "repeat_last_every_hours": 0,
       "steps": [
         {
-          "text": "Boa decisao com o Energy Hack.\n\nEnergia ajuda voce a executar melhor. Mas para transformar execucao em resultado consistente, tambem e preciso sistema.\n\nA Gestao Inteligente entra nesse ponto.\n\nAcesse aqui: https://syncronix.co/gestao-inteligente",
-          "delay_hours_after": 6
+          "text": "Buena elección con La Regla de la Vida.\n\nOrdena conducta y ejecución. El siguiente paso es leer los patrones detrás de tus resultados: El Algoritmo del Universo.\n\nhttps://syncronix.co/ebook-el-algoritmo-del-universo/\n\nPara parar, responde SALIR.",
+          "delay_hours_after": 4
         },
         {
-          "text": "Uma pergunta objetiva:\n\nHoje voce administra suas metas com um sistema claro ou depende de memoria, urgencia e improviso?\n\nA Gestao Inteligente foi feita para organizar decisao, prioridade e acompanhamento.\n\nLink direto: https://syncronix.co/gestao-inteligente",
+          "text": "Disciplina sin lectura correcta puede convertirse en esfuerzo mal dirigido.\n\nEl Algoritmo del Universo te ayuda a actuar con más contexto y precisión.\n\nhttps://syncronix.co/ebook-el-algoritmo-del-universo/\n\nPara parar, responde SALIR.",
           "delay_hours_after": 24
         },
         {
-          "text": "Performance pessoal melhora quando existe clareza de gestao.\n\nA Gestao Inteligente ajuda a transformar energia e foco em rotina, indicadores e progresso real.\n\nVeja aqui: https://syncronix.co/gestao-inteligente",
+          "text": "Cerrando esta secuencia.\n\nDespués de La Regla de la Vida, el próximo paso lógico es El Algoritmo del Universo.\n\nhttps://syncronix.co/ebook-el-algoritmo-del-universo/\n\nPara parar, responde SALIR.",
           "delay_hours_after": 48
+        }
+      ]
+    },
+    {
+      "id": "seq_pt_algoritmo_para_estado",
+      "name": "PT-BR: O Algoritmo do Universo -> Estado Mestre",
+      "language": "pt-BR",
+      "goal": "Conduzir comprador do Algoritmo do Universo para Estado Mestre.",
+      "trigger_products": ["o algoritmo do universo", "algoritmo do universo"],
+      "target_product": "Estado Mestre",
+      "repeat_last_every_hours": 0,
+      "steps": [
+        {
+          "text": "Excelente avançar com O Algoritmo do Universo.\n\nDepois de ler padrões, o próximo passo é sustentar um estado interno mais estável: Estado Mestre.\n\nhttps://pay.hotmart.com/J103587379L\n\nPara parar, responda SAIR.",
+          "delay_hours_after": 6
         },
         {
-          "text": "Encerrando esta sequencia.\n\nSe voce quer sair do improviso e organizar melhor seus resultados, o proximo passo e Gestao Inteligente.\n\nAcesse: https://syncronix.co/gestao-inteligente\n\nPara parar lembretes, responda SAIR.",
-          "delay_hours_after": 72
+          "text": "Estratégia falha quando o estado interno oscila demais.\n\nEstado Mestre trabalha essa base para decisão e execução com mais firmeza.\n\nhttps://pay.hotmart.com/J103587379L\n\nPara parar, responda SAIR.",
+          "delay_hours_after": 24
+        },
+        {
+          "text": "Último lembrete desta sequência.\n\nDepois do Algoritmo do Universo, Estado Mestre é o próximo passo da esteira.\n\nhttps://pay.hotmart.com/J103587379L\n\nPara parar, responda SAIR.",
+          "delay_hours_after": 48
+        }
+      ]
+    },
+    {
+      "id": "seq_en_algorithm_para_master",
+      "name": "EN: The Algorithm of the Universe -> Master State",
+      "language": "en",
+      "goal": "Move Algorithm buyers to Master State.",
+      "trigger_products": ["the algorithm of the universe", "algorithm of the universe"],
+      "target_product": "Master State",
+      "repeat_last_every_hours": 0,
+      "steps": [
+        {
+          "text": "Great step with The Algorithm of the Universe.\n\nAfter reading patterns, the next step is holding a steadier internal state: Master State.\n\nhttps://pay.hotmart.com/R103597382K\n\nTo stop, reply STOP.",
+          "delay_hours_after": 6
+        },
+        {
+          "text": "Strategy weakens when your internal state keeps shifting.\n\nMaster State develops that base for clearer decisions and execution.\n\nhttps://pay.hotmart.com/R103597382K\n\nTo stop, reply STOP.",
+          "delay_hours_after": 24
+        },
+        {
+          "text": "Final reminder in this sequence.\n\nAfter The Algorithm of the Universe, Master State is the next Syncronix step.\n\nhttps://pay.hotmart.com/R103597382K\n\nTo stop, reply STOP.",
+          "delay_hours_after": 48
+        }
+      ]
+    },
+    {
+      "id": "seq_es_algoritmo_para_estado",
+      "name": "ES: El Algoritmo del Universo -> Estado Maestro",
+      "language": "es",
+      "goal": "Conducir comprador del Algoritmo del Universo a Estado Maestro.",
+      "trigger_products": ["el algoritmo del universo", "algoritmo del universo"],
+      "target_product": "Estado Maestro",
+      "repeat_last_every_hours": 0,
+      "steps": [
+        {
+          "text": "Excelente avance con El Algoritmo del Universo.\n\nDespués de leer patrones, el siguiente paso es sostener un estado interno más estable: Estado Maestro.\n\nhttps://pay.hotmart.com/N103597337N\n\nPara parar, responde SALIR.",
+          "delay_hours_after": 6
+        },
+        {
+          "text": "La estrategia pierde fuerza cuando tu estado interno oscila demasiado.\n\nEstado Maestro trabaja esa base para decidir y ejecutar mejor.\n\nhttps://pay.hotmart.com/N103597337N\n\nPara parar, responde SALIR.",
+          "delay_hours_after": 24
+        },
+        {
+          "text": "Último recordatorio de esta secuencia.\n\nDespués de El Algoritmo del Universo, Estado Maestro es el próximo paso de Syncronix.\n\nhttps://pay.hotmart.com/N103597337N\n\nPara parar, responde SALIR.",
+          "delay_hours_after": 48
+        }
+      ]
+    },
+    {
+      "id": "seq_pt_energy_para_manual",
+      "name": "PT-BR: Energy Hack 8D -> Manual Avançado do Salto Quântico",
+      "language": "pt-BR",
+      "goal": "Conduzir comprador do Energy Hack 8D ao Manual Avançado do Salto Quântico.",
+      "trigger_products": ["energy hack 8d", "energy hack"],
+      "target_product": "Manual Avançado do Salto Quântico",
+      "repeat_last_every_hours": 0,
+      "steps": [
+        {
+          "text": "Boa decisão com o Energy Hack 8D.\n\nEnergia ajuda na execução. O próximo passo é direcionar salto de percepção e decisão: Manual Avançado do Salto Quântico.\n\nhttps://pay.hotmart.com/P95880111J\n\nPara parar, responda SAIR.",
+          "delay_hours_after": 6
+        },
+        {
+          "text": "Energia sem direção pode virar esforço disperso.\n\nO Manual Avançado do Salto Quântico aprofunda direção, mudança interna e ação consciente.\n\nhttps://pay.hotmart.com/P95880111J\n\nPara parar, responda SAIR.",
+          "delay_hours_after": 24
+        },
+        {
+          "text": "Encerrando esta sequência.\n\nDepois do Energy Hack 8D, o próximo passo lógico é o Manual Avançado do Salto Quântico.\n\nhttps://pay.hotmart.com/P95880111J\n\nPara parar, responda SAIR.",
+          "delay_hours_after": 48
+        }
+      ]
+    },
+    {
+      "id": "seq_en_energy_para_quantum",
+      "name": "EN: Energy Hack 8D -> Quantum Leap Manual",
+      "language": "en",
+      "goal": "Move Energy Hack buyers to Quantum Leap Manual.",
+      "trigger_products": ["energy hack 8d", "energy hack"],
+      "target_product": "Quantum Leap Manual",
+      "repeat_last_every_hours": 0,
+      "steps": [
+        {
+          "text": "Good decision with Energy Hack 8D.\n\nEnergy supports execution. The next step is directing perception and decision: Quantum Leap Manual.\n\nhttps://pay.hotmart.com/V97813128V\n\nTo stop, reply STOP.",
+          "delay_hours_after": 6
+        },
+        {
+          "text": "Energy without direction can become scattered effort.\n\nQuantum Leap Manual develops direction, internal shift and conscious action.\n\nhttps://pay.hotmart.com/V97813128V\n\nTo stop, reply STOP.",
+          "delay_hours_after": 24
+        },
+        {
+          "text": "Closing this sequence.\n\nAfter Energy Hack 8D, the next logical step is Quantum Leap Manual.\n\nhttps://pay.hotmart.com/V97813128V\n\nTo stop, reply STOP.",
+          "delay_hours_after": 48
+        }
+      ]
+    },
+    {
+      "id": "seq_es_energy_para_manual",
+      "name": "ES: Energy Hack 8D -> Manual Avanzado del Salto Cuántico",
+      "language": "es",
+      "goal": "Conducir comprador de Energy Hack 8D al Manual Avanzado del Salto Cuántico.",
+      "trigger_products": ["energy hack 8d", "energy hack"],
+      "target_product": "Manual Avanzado del Salto Cuántico",
+      "repeat_last_every_hours": 0,
+      "steps": [
+        {
+          "text": "Buena decisión con Energy Hack 8D.\n\nLa energía apoya la ejecución. El próximo paso es dirigir percepción y decisión: Manual Avanzado del Salto Cuántico.\n\nhttps://pay.hotmart.com/E98981497I\n\nPara parar, responde SALIR.",
+          "delay_hours_after": 6
+        },
+        {
+          "text": "Energía sin dirección puede convertirse en esfuerzo disperso.\n\nEl Manual Avanzado del Salto Cuántico profundiza dirección, cambio interno y acción consciente.\n\nhttps://pay.hotmart.com/E98981497I\n\nPara parar, responde SALIR.",
+          "delay_hours_after": 24
+        },
+        {
+          "text": "Cerrando esta secuencia.\n\nDespués de Energy Hack 8D, el próximo paso lógico es el Manual Avanzado del Salto Cuántico.\n\nhttps://pay.hotmart.com/E98981497I\n\nPara parar, responde SALIR.",
+          "delay_hours_after": 48
         }
       ]
     }

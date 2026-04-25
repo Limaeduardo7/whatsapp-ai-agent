@@ -151,7 +151,7 @@ async def handle_message(data: dict[str, Any]) -> None:
         logger.info("Incoming message from %s", mask_phone(sender))
         lower_text = text.lower()
         normalized_text = unicodedata.normalize("NFKD", lower_text).encode("ascii", "ignore").decode("ascii")
-        if any(marker in normalized_text for marker in ["parar", "sair", "nao quero", "stop"]):
+        if any(marker in normalized_text for marker in ["parar", "sair", "salir", "nao quero", "stop"]):
             chat_repository.set_opted_out(sender)
             await evolution_client.send_text(
                 sender,
