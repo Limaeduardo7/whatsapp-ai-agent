@@ -15,6 +15,35 @@ from src.repositories import ChatRepository
 logger = logging.getLogger("whatsapp-ai-agent")
 
 
+def language_from_phone(phone: str | None) -> str | None:
+    digits = "".join(ch for ch in str(phone or "") if ch.isdigit())
+    if len(digits) < 2:
+        return None
+
+    # Priority by known DDI ranges for this operation
+    if digits.startswith("55"):
+        return "pt-BR"
+
+    es_prefixes = (
+        "52", "54", "57", "56", "51", "58", "53", "34", "591", "595", "593", "598", "502", "503", "504", "505", "506", "507", "1"
+    )
+    en_prefixes = ("1", "44", "61", "49")
+
+    # Specific latin DDIs first (except ambiguous 1)
+    for p in es_prefixes:
+        if p != "1" and digits.startswith(p):
+            return "es"
+    for p in en_prefixes:
+        if p != "1" and digits.startswith(p):
+            return "en"
+
+    # Ambiguous NANP (+1): fallback to EN
+    if digits.startswith("1"):
+        return "en"
+
+    return None
+
+
 def closer_system_prompt() -> str:
     return build_postsale_system_prompt()
 
@@ -83,7 +112,7 @@ class LLMClient:
         self.settings = settings
         self.chat_repository = chat_repository
 
-    async def call(self, user_message: str, phone: str) -> str:
+    async def call(self, user_message: str, phone: str, language: str | None = None) -> str:
         if not self.settings.llm_api_key:
             raise RuntimeError("LLM_API_KEY is missing")
 
@@ -91,6 +120,15 @@ class LLMClient:
         messages: list[dict[str, str]] = []
         if self.settings.closer_enabled:
             messages.append({"role": "system", "content": closer_system_prompt()})
+        lang = language
+        if not lang:
+            lang = language_from_phone(phone)
+        if lang == "pt-BR":
+            messages.append({"role": "system", "content": "Responda sempre em português do Brasil."})
+        elif lang == "es":
+            messages.append({"role": "system", "content": "Responde siempre en español."})
+        elif lang == "en":
+            messages.append({"role": "system", "content": "Always respond in English."})
         summary = self.chat_repository.get_profile_summary(phone)
         if summary:
             messages.append({"role": "system", "content": f"Contexto resumido do cliente: {summary}"})

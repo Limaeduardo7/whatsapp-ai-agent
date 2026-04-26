@@ -15,7 +15,7 @@ from src.config import get_settings
 from src.marketing_dashboard import render_marketing_dashboard
 from src.repositories import MarketingRepository
 from src.security import require_admin_api_key, validate_shared_secret
-from src.services import EvolutionClient
+from src.services import EvolutionClient, language_from_phone
 
 logger = logging.getLogger("marketing-automation")
 
@@ -604,10 +604,12 @@ async def _process_due_customers_once() -> None:
             continue
 
         cust_lang = _normalize_language(cust["language"]) if "language" in cust.keys() else None
+        phone_lang = language_from_phone(phone)
         seq_lang = _normalize_language(seq.get("language"))
-        if not cust_lang or not seq_lang or cust_lang != seq_lang:
+        effective_lang = cust_lang or phone_lang
+        if not effective_lang or not seq_lang or effective_lang != seq_lang:
             logger.warning(
-                f"Skipping marketing send due to language mismatch/unknown | phone={phone} customer_lang={cust_lang} seq_lang={seq_lang}"
+                f"Skipping marketing send due to language mismatch/unknown | phone={phone} customer_lang={cust_lang} phone_lang={phone_lang} seq_lang={seq_lang}"
             )
             _update_customer_state(phone, step=step_idx, next_send_at=None, status="idle")
             continue
@@ -733,7 +735,7 @@ async def hotmart_webhook(
         if isinstance(buyer, dict):
             name = buyer.get("name")
 
-    resolved_language = _normalize_language(language) or _detect_language(payload, product)
+    resolved_language = _normalize_language(language) or _detect_language(payload, product) or language_from_phone(phone)
 
     _save_purchase(purchase_id, phone, product, approved_at, payload)
     sequence = _upsert_customer_after_purchase(phone, name, product, approved_at, resolved_language)

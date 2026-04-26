@@ -15,7 +15,7 @@ from src.marketing_automation import router as marketing_router
 from src.marketing_automation import start_scheduler, stop_scheduler
 from src.repositories import ChatRepository
 from src.security import validate_shared_secret
-from src.services import EvolutionClient, LLMClient, extract_message_id, extract_text_from_message
+from src.services import EvolutionClient, LLMClient, extract_message_id, extract_text_from_message, language_from_phone
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("whatsapp-ai-bridge")
@@ -160,7 +160,8 @@ async def handle_message(data: dict[str, Any]) -> None:
             return
 
         chat_repository.append_memory(sender, "user", text)
-        llm_reply = await llm_client.call(text, sender)
+        preferred_language = language_from_phone(sender)
+        llm_reply = await llm_client.call(text, sender, preferred_language)
         if not llm_reply:
             logger.warning("LLM returned empty reply")
             return
