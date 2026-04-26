@@ -237,8 +237,8 @@ def _detect_language(payload: dict[str, Any], product_name: str | None) -> str |
     if language:
         return language
 
-    # 5) safe default
-    return "pt-BR"
+    # 5) sem confiança: não classificar
+    return None
 
 
 def _find_sequence_for_product(product_name: str, language: str | None = None) -> dict[str, Any] | None:
@@ -467,8 +467,9 @@ def _get_customer_language(phone: str) -> str | None:
 
 def _upsert_customer_after_purchase(phone: str, name: str | None, product: str, approved_at: str | None, language: str | None = None) -> dict[str, Any] | None:
     locked_language = _get_customer_language(phone)
-    effective_language = locked_language or _normalize_language(language) or _detect_language({"data": {"product": {"name": product}}}, product)
-    sequence = _find_sequence_for_product(product, effective_language)
+    detected_language = _normalize_language(language) or _detect_language({"data": {"product": {"name": product}}}, product)
+    effective_language = locked_language or detected_language
+    sequence = _find_sequence_for_product(product, effective_language) if effective_language else None
 
     now = now_utc()
     ts = to_iso(now)
@@ -494,7 +495,7 @@ def _upsert_customer_after_purchase(phone: str, name: str | None, product: str, 
             (
                 phone,
                 name,
-                "active" if sequence else "idle",
+                "active" if (sequence and effective_language) else "idle",
                 sequence.get("id") if sequence else None,
                 0,
                 product,
@@ -600,6 +601,15 @@ async def _process_due_customers_once() -> None:
         seq = sequence_map.get(seq_id)
         if not seq:
             _update_customer_state(phone, step=0, next_send_at=None, status="idle")
+            continue
+
+        cust_lang = _normalize_language(cust["language"]) if "language" in cust.keys() else None
+        seq_lang = _normalize_language(seq.get("language"))
+        if not cust_lang or not seq_lang or cust_lang != seq_lang:
+            logger.warning(
+                f"Skipping marketing send due to language mismatch/unknown | phone={phone} customer_lang={cust_lang} seq_lang={seq_lang}"
+            )
+            _update_customer_state(phone, step=step_idx, next_send_at=None, status="idle")
             continue
 
         steps = seq.get("steps", [])
@@ -723,15 +733,19 @@ async def hotmart_webhook(
         if isinstance(buyer, dict):
             name = buyer.get("name")
 
+    resolved_language = _normalize_language(language) or _detect_language(payload, product)
+
     _save_purchase(purchase_id, phone, product, approved_at, payload)
-    sequence = _upsert_customer_after_purchase(phone, name, product, approved_at, language)
+    sequence = _upsert_customer_after_purchase(phone, name, product, approved_at, resolved_language)
 
     return {
         "status": "ok",
         "phone": phone,
         "product": product,
-        "language": language,
+        "language": resolved_language,
         "sequence_started": sequence.get("id") if sequence else None,
+        "skipped": sequence is None,
+        "skip_reason": "language_not_identified_or_no_sequence" if sequence is None else None,
     }
 
 
