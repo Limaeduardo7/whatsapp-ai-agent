@@ -529,6 +529,30 @@ def _save_purchase(purchase_id: str | None, phone: str, product: str, approved_a
         conn.commit()
 
 
+def _purchase_count_for_phone(phone: str) -> int:
+    with sqlite3.connect(DB_PATH) as conn:
+        row = conn.execute("SELECT COUNT(*) FROM marketing_purchases WHERE phone = ?", (phone,)).fetchone()
+    return int(row[0] if row and row[0] is not None else 0)
+
+
+def _welcome_message_for_first_purchase(language: str, product: str) -> str:
+    product_name = str(product).strip() or "seu produto"
+    if language == "es":
+        return (
+            f"¡Bienvenido(a)! Confirmamos tu compra de \"{product_name}\". "
+            "¿Ya lograste acceder al material o quieres que te guíe en 1 minuto?"
+        )
+    if language == "en":
+        return (
+            f"Welcome! Your purchase of \"{product_name}\" is confirmed. "
+            "Have you already accessed the material, or want me to guide you in 1 minute?"
+        )
+    return (
+        f"Bem-vindo(a)! Sua compra de \"{product_name}\" foi confirmada. "
+        "Você já conseguiu acessar o material ou quer que eu te guie em 1 minuto?"
+    )
+
+
 def _get_due_customers(limit: int = 50) -> list[sqlite3.Row]:
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
@@ -738,6 +762,17 @@ async def hotmart_webhook(
     resolved_language = _normalize_language(language) or _detect_language(payload, product) or language_from_phone(phone)
 
     _save_purchase(purchase_id, phone, product, approved_at, payload)
+
+    # Mensagem complementar: somente na primeira compra do contato
+    purchase_count = _purchase_count_for_phone(phone)
+    if purchase_count == 1 and resolved_language:
+        welcome_text = _welcome_message_for_first_purchase(resolved_language, product)
+        try:
+            provider_status, provider_msg_id = await _send_text(phone, welcome_text)
+            _store_message_log(phone, "welcome_first_purchase", 0, welcome_text, provider_status, provider_msg_id)
+        except Exception as e:
+            logger.error(f"Falha ao enviar mensagem de boas-vindas para {phone}: {e}")
+
     sequence = _upsert_customer_after_purchase(phone, name, product, approved_at, resolved_language)
 
     return {
