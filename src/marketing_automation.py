@@ -613,6 +613,29 @@ def _already_sent_marketing_today(phone: str) -> bool:
     return bool(row and row[0] > 0)
 
 
+def _text_send_count_for_phone(phone: str, text: str) -> int:
+    with sqlite3.connect(DB_PATH) as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) FROM marketing_messages WHERE phone = ? AND text = ?",
+            (phone, text),
+        ).fetchone()
+    return int(row[0] if row and row[0] is not None else 0)
+
+
+def _ensure_non_repeated_text(phone: str, text: str) -> str:
+    count = _text_send_count_for_phone(phone, text)
+    if count == 0:
+        return text
+
+    suffixes = [
+        "\n\nNota rápida: se quiser, eu te explico em 1 minuto como aplicar isso no seu caso.",
+        "\n\nResumo prático: esse é o próximo passo lógico para acelerar seu resultado com consistência.",
+        "\n\nSe fizer sentido, te mostro agora o caminho mais direto para começar.",
+    ]
+    idx = min(count - 1, len(suffixes) - 1)
+    return f"{text}{suffixes[idx]}"
+
+
 async def _process_due_customers_once() -> None:
     sequence_map = _get_sequence_map()
     due_customers = _get_due_customers()
@@ -658,9 +681,10 @@ async def _process_due_customers_once() -> None:
                 step_obj = steps[last_idx]
                 text = str(step_obj.get("text", "")).strip()
                 if text:
+                    send_text = _ensure_non_repeated_text(phone, text)
                     try:
-                        status, msg_id = await _send_text(phone, text)
-                        _store_message_log(phone, seq_id, last_idx, text, status, msg_id)
+                        status, msg_id = await _send_text(phone, send_text)
+                        _store_message_log(phone, seq_id, last_idx, send_text, status, msg_id)
                     except Exception as e:
                         logger.error(f"Erro no repeat_last para {phone}: {e}")
                 next_dt = now_utc() + timedelta(hours=repeat_hours)
@@ -684,8 +708,9 @@ async def _process_due_customers_once() -> None:
             continue
 
         try:
-            provider_status, provider_msg_id = await _send_text(phone, text)
-            _store_message_log(phone, seq_id, step_idx, text, provider_status, provider_msg_id)
+            send_text = _ensure_non_repeated_text(phone, text)
+            provider_status, provider_msg_id = await _send_text(phone, send_text)
+            _store_message_log(phone, seq_id, step_idx, send_text, provider_status, provider_msg_id)
             next_dt = now_utc() + timedelta(hours=delay_hours)
             _update_customer_state(phone, step=step_idx + 1, next_send_at=to_iso(next_dt), status="active")
             logger.info(f"Mensagem de marketing enviada para {phone} seq={seq_id} step={step_idx}")
