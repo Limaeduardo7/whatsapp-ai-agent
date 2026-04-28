@@ -128,6 +128,16 @@ def _load_sequences() -> list[dict[str, Any]]:
     return data if isinstance(data, list) else []
 
 
+def _save_sequences(sequences: list[dict[str, Any]]) -> None:
+    payload = {"sequences": sequences}
+    parent = os.path.dirname(settings.sequences_file)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
+    with open(settings.sequences_file, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+
+
 def _normalize_language(value: Any) -> str | None:
     if value is None:
         return None
@@ -820,6 +830,57 @@ async def run_once() -> dict[str, Any]:
 @router.get("/automation/stats", dependencies=[Depends(require_admin_api_key)])
 async def stats() -> dict[str, Any]:
     return marketing_repository.stats()
+
+
+@router.get("/sequences", dependencies=[Depends(require_admin_api_key)])
+async def list_sequences() -> dict[str, Any]:
+    return {"status": "ok", "sequences": _load_sequences()}
+
+
+@router.put("/sequences/{sequence_id}", dependencies=[Depends(require_admin_api_key)])
+async def update_sequence(sequence_id: str, request: Request) -> dict[str, Any]:
+    body = await request.json()
+    if not isinstance(body, dict):
+        return {"status": "error", "message": "invalid_body"}
+
+    sequences = _load_sequences()
+    idx = next((i for i, s in enumerate(sequences) if str(s.get("id")) == sequence_id), None)
+    if idx is None:
+        return {"status": "error", "message": "sequence_not_found", "sequence_id": sequence_id}
+
+    current = dict(sequences[idx])
+    next_seq = dict(current)
+
+    allowed_fields = {"name", "language", "goal", "trigger_products", "target_product", "repeat_last_every_hours", "steps"}
+    for k, v in body.items():
+        if k in allowed_fields:
+            next_seq[k] = v
+
+    # validações mínimas
+    steps = next_seq.get("steps")
+    if not isinstance(steps, list) or not steps:
+        return {"status": "error", "message": "invalid_steps"}
+    for i, step in enumerate(steps):
+        if not isinstance(step, dict):
+            return {"status": "error", "message": f"invalid_step_{i}"}
+        text = str(step.get("text") or "").strip()
+        if not text:
+            return {"status": "error", "message": f"empty_step_text_{i}"}
+        if not any(term in text.upper() for term in ["SAIR", "STOP", "SALIR"]):
+            return {"status": "error", "message": f"missing_opt_out_in_step_{i}"}
+        try:
+            step["delay_hours_after"] = int(step.get("delay_hours_after", 24) or 24)
+        except Exception:
+            return {"status": "error", "message": f"invalid_delay_in_step_{i}"}
+
+    if _normalize_language(next_seq.get("language")) is None:
+        return {"status": "error", "message": "invalid_language"}
+
+    next_seq["id"] = current.get("id")
+    sequences[idx] = next_seq
+    _save_sequences(sequences)
+
+    return {"status": "ok", "sequence_id": sequence_id, "sequence": next_seq}
 
 
 def _load_price_map() -> dict[str, float]:
