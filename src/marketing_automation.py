@@ -138,6 +138,32 @@ def _save_sequences(sequences: list[dict[str, Any]]) -> None:
         f.write("\n")
 
 
+def _update_env_values(updates: dict[str, str]) -> None:
+    env_path = os.path.join(os.path.dirname(DB_PATH), "..", ".env")
+    env_path = os.path.abspath(env_path)
+    if not os.path.exists(env_path):
+        return
+
+    with open(env_path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    done = set()
+    for i, line in enumerate(lines):
+        if "=" not in line or line.strip().startswith("#"):
+            continue
+        key = line.split("=", 1)[0].strip()
+        if key in updates:
+            lines[i] = f"{key}={updates[key]}\n"
+            done.add(key)
+
+    for k, v in updates.items():
+        if k not in done:
+            lines.append(f"{k}={v}\n")
+
+    with open(env_path, "w", encoding="utf-8") as f:
+        f.writelines(lines)
+
+
 def _normalize_language(value: Any) -> str | None:
     if value is None:
         return None
@@ -883,6 +909,49 @@ async def update_sequence(sequence_id: str, request: Request) -> dict[str, Any]:
     return {"status": "ok", "sequence_id": sequence_id, "sequence": next_seq}
 
 
+@router.get("/agent/config", dependencies=[Depends(require_admin_api_key)])
+async def get_agent_config() -> dict[str, Any]:
+    cfg = {
+        "LLM_API_URL": settings.llm_api_url,
+        "LLM_MODEL_ID": settings.llm_model_id,
+        "THINKING_LEVEL": settings.thinking_level,
+        "MARKETING_AUTOMATION_ENABLED": settings.marketing_automation_enabled,
+        "AI_AGENT_ENABLED": settings.ai_agent_enabled,
+        "CLOSER_ENABLED": settings.closer_enabled,
+        "TYPING_ENABLED": settings.typing_enabled,
+        "MAX_HISTORY_MESSAGES": settings.max_history_messages,
+        "SCHEDULER_INTERVAL_SECONDS": settings.scheduler_interval_seconds,
+    }
+    return {"status": "ok", "config": cfg}
+
+
+@router.put("/agent/config", dependencies=[Depends(require_admin_api_key)])
+async def update_agent_config(request: Request) -> dict[str, Any]:
+    body = await request.json()
+    if not isinstance(body, dict):
+        return {"status": "error", "message": "invalid_body"}
+
+    allowed = {
+        "LLM_API_URL", "LLM_MODEL_ID", "THINKING_LEVEL",
+        "MARKETING_AUTOMATION_ENABLED", "AI_AGENT_ENABLED", "CLOSER_ENABLED", "TYPING_ENABLED",
+        "MAX_HISTORY_MESSAGES", "SCHEDULER_INTERVAL_SECONDS",
+    }
+    updates: dict[str, str] = {}
+    for k, v in body.items():
+        if k not in allowed:
+            continue
+        if isinstance(v, bool):
+            updates[k] = "true" if v else "false"
+        else:
+            updates[k] = str(v)
+
+    if not updates:
+        return {"status": "error", "message": "no_allowed_fields"}
+
+    _update_env_values(updates)
+    return {"status": "ok", "updated": updates, "note": "Reinicie os serviços para aplicar totalmente."}
+
+
 def _load_price_map() -> dict[str, float]:
     raw = os.getenv("PRODUCT_PRICE_MAP", "{}")
     try:
@@ -1513,9 +1582,9 @@ async def opt_out_customer(phone: str) -> dict[str, Any]:
     return {"status": "ok", "phone": phone, "action": "opted_out"}
 
 
-@router.get("/dashboard/data")
+@router.get("/dashboard/data", dependencies=[Depends(require_admin_api_key)])
 async def dashboard_data() -> dict[str, Any]:
-    """Dashboard público (somente leitura): métricas + tabelas resumidas."""
+    """Dashboard protegido por admin key: métricas + tabelas resumidas."""
     marketing_repository.init()
     s = marketing_repository.stats()
     sequences = _load_sequences()

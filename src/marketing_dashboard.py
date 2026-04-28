@@ -8,7 +8,7 @@ def render_marketing_dashboard() -> str:
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Syncronix · Marketing Ops</title>
-  <link rel="icon" type="image/webp" href="data:image/webp;base64,__ICON_B64__" />
+  <link rel="icon" type="image/webp" href="https://syncronix.co/HEXACRONIX-ADESIVO-300x300.webp" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -78,7 +78,7 @@ def render_marketing_dashboard() -> str:
 </head>
 <body class="bg-zinc-50 text-zinc-950 antialiased dark:bg-zinc-950 dark:text-zinc-50 transition-colors duration-300">
 <div id="__splash__" style="position:fixed;inset:0;z-index:9999;background:#09090b;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity 0.45s ease">
-  <img src="data:image/webp;base64,__ICON_B64__" style="width:88px;height:88px;object-fit:contain;animation:splashPulse 1.6s ease-in-out infinite" alt=""/>
+  <img src="https://syncronix.co/HEXACRONIX-ADESIVO-300x300.webp" style="width:88px;height:88px;object-fit:contain;animation:splashPulse 1.6s ease-in-out infinite" alt=""/>
   <div style="color:#3f3f46;font-size:11px;font-family:Inter,system-ui,sans-serif;letter-spacing:0.12em;text-transform:uppercase">Carregando…</div>
 </div>
 <style>@keyframes splashPulse{0%,100%{opacity:0.5;transform:scale(0.96)}50%{opacity:1;transform:scale(1)}}</style>
@@ -93,6 +93,8 @@ const { useCallback, useEffect, useMemo, useRef, useState } = React;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const API_URL = "/marketing/dashboard/data";
+const SEQ_API = "/marketing/sequences";
+const CFG_API = "/marketing/agent/config";
 const ACTIONS = {
   pause:      "/marketing/automation/customers/{phone}/pause",
   reactivate: "/marketing/automation/customers/{phone}/reactivate",
@@ -464,7 +466,7 @@ function Sidebar({page,setPage,dark,setDark,open,setOpen,collapsed,setCollapsed}
   const inner=(
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 px-5 py-5 border-b border-zinc-200/60 dark:border-zinc-800/60">
-        <img src="data:image/png;base64,__LOGO_B64__" className="h-9 w-auto max-w-[148px] flex-shrink-0 object-contain" alt="Syncronix"/>
+        <img src="https://syncronix.co/53c9d0b6-d91c-4826-902f-269cf93d8103.png" className="h-16 w-auto max-w-[300px] flex-shrink-0 object-contain" alt="Syncronix"/>
         <button onClick={()=>setCollapsed(true)} title="Recolher menu" className="hidden lg:flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><polyline points="9,2 4,7 9,12"/></svg>
         </button>
@@ -686,7 +688,7 @@ function OverviewPage({stats,analytics,health,perf,loading,attrBRL,attrLabel,cus
       <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
         <Card glow>
           <CardH><CardT grad>Funil de conversão</CardT><CardD>Etapas com taxas de conversão acumuladas e step-a-step</CardD></CardH>
-          <CardC>{loading?<Skeleton rows={6}/>:<EChart option={funnelOpt} height={300} dark={dark}/>}</CardC>
+          <CardC>{loading?<Skeleton rows={6}/>:<EChart option={funnelOpt} height={340} dark={dark}/>}</CardC>
         </Card>
         <div className="grid gap-4 sm:grid-cols-2">
           {[
@@ -712,7 +714,7 @@ function OverviewPage({stats,analytics,health,perf,loading,attrBRL,attrLabel,cus
         </Card>
         <Card>
           <CardH><CardT>Distribuição de status</CardT><CardD>Clientes por estado atual</CardD></CardH>
-          <CardC>{loading?<Skeleton rows={4}/>:<EChart option={pieOpt} height={240} dark={dark}/>}</CardC>
+          <CardC>{loading?<Skeleton rows={4}/>:<EChart option={pieOpt} height={280} dark={dark}/>}</CardC>
         </Card>
       </section>
 
@@ -962,20 +964,34 @@ function Dashboard() {
   const [dark,setDark]        = useState(()=>localStorage.getItem("mk_theme")!=="light");
   const [mobileOpen,setMOpen] = useState(false);
   const [actLoad,setActLoad]  = useState(false);
+  const [seqEditId,setSeqEditId]=useState("");
+  const [seqEdit,setSeqEdit]=useState(null);
+  const [cfgEdit,setCfgEdit]=useState({});
   const {toasts,add:toast}    = useToast();
 
   useEffect(()=>{ document.documentElement.classList.toggle("dark",dark); localStorage.setItem("mk_theme",dark?"dark":"light"); },[dark]);
 
   const vd = data||lastGood||{stats:{},customers:[],purchases:[],messages:[],sequences:[],analytics:{funnel:[],health:{},performance:{},failures:[],sequence_issues:[],engagement_scores:{},engagement_distribution:[],cohort_data:{},sequence_analytics:[],attribution_comparison:{},time_to_conversion:{},failure_trend:[]}};
 
+  function adminHeaders(extra={}) {
+    return {"x-admin-api-key":adminKey,...extra};
+  }
+
   async function refresh({initial=false}={}) {
     if(initial) setLoading(true);
     setRef(true); setError("");
     try {
-      const r=await fetch(API_URL,{cache:"no-store"});
+      if(!adminKey.trim()) throw new Error("Informe a senha para acessar a interface.");
+      const r=await fetch(API_URL,{cache:"no-store",headers:adminHeaders()});
       if(!r.ok) throw new Error(`Falha ${r.status}: ${r.statusText}`);
       const d=await r.json();
       setData(d); setLastGood(d);
+
+      const cfgR=await fetch(CFG_API,{headers:adminHeaders()});
+      if(cfgR.ok){
+        const cfg=await cfgR.json();
+        setCfgEdit(cfg.config||null);
+      }
     } catch(e) {
       const m=e.message||"Não foi possível carregar o dashboard.";
       setError(m); toast(m,"error");
@@ -988,7 +1004,7 @@ function Dashboard() {
     if(!window.confirm(`Confirmar: ${labels[action]} para ${phone}?`)) return;
     localStorage.setItem("mk_admin",adminKey); setActLoad(true);
     try {
-      const r=await fetch(ACTIONS[action].replace("{phone}",encodeURIComponent(phone)),{method:"POST",headers:{"x-admin-api-key":adminKey}});
+      const r=await fetch(ACTIONS[action].replace("{phone}",encodeURIComponent(phone)),{method:"POST",headers:adminHeaders()});
       if(!r.ok) throw new Error(`Falha ${r.status}`);
       toast("Ação executada com sucesso.","success");
       await refresh();
@@ -996,11 +1012,33 @@ function Dashboard() {
     finally { setActLoad(false); }
   }
 
+  async function saveSequence(){
+    if(!seqEditId||!seqEdit) return;
+    try{
+      const r=await fetch(`${SEQ_API}/${encodeURIComponent(seqEditId)}`,{method:"PUT",headers:adminHeaders({"Content-Type":"application/json"}),body:JSON.stringify(seqEdit)});
+      const b=await r.json();
+      if(!r.ok||b.status!=="ok") throw new Error(b.message||`Falha ${r.status}`);
+      toast("Sequência atualizada.","success");
+      await refresh();
+    }catch(e){toast(e.message||"Erro ao salvar sequência","error");}
+  }
+
+  async function saveConfig(){
+    if(!cfgEdit) return;
+    try{
+      const r=await fetch(CFG_API,{method:"PUT",headers:adminHeaders({"Content-Type":"application/json"}),body:JSON.stringify(cfgEdit)});
+      const b=await r.json();
+      if(!r.ok||b.status!=="ok") throw new Error(b.message||`Falha ${r.status}`);
+      toast("Configuração salva. Reinicie serviços para aplicar tudo.","success");
+    }catch(e){toast(e.message||"Erro ao salvar config","error");}
+  }
+
   useEffect(()=>{
     const s=document.getElementById("__splash__");
     if(s){s.style.opacity="0";setTimeout(()=>s.remove(),480);}
+    if(!adminKey.trim()) return;
     refresh({initial:true}); const id=setInterval(refresh,30000); return()=>clearInterval(id);
-  },[]);
+  },[adminKey]);
 
   const customers = vd.customers||[];
   const purchases = vd.purchases||[];
@@ -1037,6 +1075,20 @@ function Dashboard() {
   }),[messages,query,seqFilter,dateRange]);
 
   const topSeqData=(perf.customers_by_sequence||[]).slice(0,8).map(r=>({name:r.sequence_id,value:r.customers}));
+
+  useEffect(()=>{
+    if(!sequences.length) return;
+    if(!seqEditId){
+      const first=sequences[0];
+      setSeqEditId(first.id);
+      setSeqEdit(JSON.parse(JSON.stringify(first)));
+      return;
+    }
+    const found=sequences.find(s=>s.id===seqEditId);
+    if(found && !seqEdit){
+      setSeqEdit(JSON.parse(JSON.stringify(found)));
+    }
+  },[sequences,seqEditId]);
 
   const colC=[
     {key:"phone",label:"Telefone"},
@@ -1182,6 +1234,28 @@ function Dashboard() {
               </CardC>
             </Card>
           </div>
+          <Card>
+            <CardH><CardT grad>Editor de sequência</CardT><CardD>Edite todos os textos e delays da jornada.</CardD></CardH>
+            <CardC className="space-y-3">
+              <Select value={seqEditId} onChange={e=>{const id=e.target.value; setSeqEditId(id); const s=sequences.find(x=>x.id===id); setSeqEdit(s?JSON.parse(JSON.stringify(s)):null);}}>
+                {sequences.map(s=><option key={s.id} value={s.id}>{s.name||s.id}</option>)}
+              </Select>
+              {seqEdit&&(
+                <div className="space-y-3">
+                  <Input value={seqEdit.name||""} onChange={e=>setSeqEdit({...seqEdit,name:e.target.value})} placeholder="Nome da sequência"/>
+                  {(seqEdit.steps||[]).map((st,i)=>(
+                    <div key={i} className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-3 space-y-2">
+                      <div className="text-xs font-semibold">Step {i+1}</div>
+                      <textarea className="w-full min-h-[130px] rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs leading-relaxed text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200" value={st.text||""} onChange={e=>{const n={...seqEdit}; n.steps=[...(n.steps||[])]; n.steps[i]={...n.steps[i],text:e.target.value}; setSeqEdit(n);}}/>
+                      <Input type="number" value={st.delay_hours_after??24} onChange={e=>{const n={...seqEdit}; n.steps=[...(n.steps||[])]; n.steps[i]={...n.steps[i],delay_hours_after:parseInt(e.target.value||"24")}; setSeqEdit(n);}} placeholder="Delay em horas"/>
+                    </div>
+                  ))}
+                  <Button onClick={saveSequence}>Salvar sequência</Button>
+                </div>
+              )}
+            </CardC>
+          </Card>
+
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {sequences.map(seq=>(
               <Card key={seq.id} className="hover:border-brand-600/30 transition-colors">
@@ -1215,7 +1289,7 @@ function Dashboard() {
             <Metric label="Última compra" value={fmtDate(health.last_purchase_at)} detail="Webhook registrado"/>
             <Metric label="Último envio"  value={fmtDate(health.last_message_at)}  detail="Mensagem enviada"/>
           </div>
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid gap-4 xl:grid-cols-3">
             <Card>
               <CardH><CardT grad>Configuração</CardT><CardD>Flags lidas pelo processo</CardD></CardH>
               <CardC className="space-y-2">
@@ -1241,6 +1315,25 @@ function Dashboard() {
                 ))}
               </CardC>
             </Card>
+            <Card>
+              <CardH><CardT grad>Configurações do agente</CardT><CardD>Edite parâmetros principais sem sair da interface.</CardD></CardH>
+              <CardC className="space-y-2">
+                <Input value={(cfgEdit&&cfgEdit.LLM_MODEL_ID)||""} onChange={e=>setCfgEdit({...cfgEdit,LLM_MODEL_ID:e.target.value})} placeholder="LLM_MODEL_ID"/>
+                <Input value={(cfgEdit&&cfgEdit.LLM_API_URL)||""} onChange={e=>setCfgEdit({...cfgEdit,LLM_API_URL:e.target.value})} placeholder="LLM_API_URL"/>
+                <Input value={(cfgEdit&&cfgEdit.THINKING_LEVEL)||""} onChange={e=>setCfgEdit({...cfgEdit,THINKING_LEVEL:e.target.value})} placeholder="THINKING_LEVEL"/>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input type="number" value={(cfgEdit&&cfgEdit.MAX_HISTORY_MESSAGES)||12} onChange={e=>setCfgEdit({...cfgEdit,MAX_HISTORY_MESSAGES:parseInt(e.target.value||"12")})} placeholder="MAX_HISTORY_MESSAGES"/>
+                  <Input type="number" value={(cfgEdit&&cfgEdit.SCHEDULER_INTERVAL_SECONDS)||30} onChange={e=>setCfgEdit({...cfgEdit,SCHEDULER_INTERVAL_SECONDS:parseInt(e.target.value||"30")})} placeholder="SCHEDULER_INTERVAL_SECONDS"/>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <label className="flex items-center gap-2"><input type="checkbox" checked={!!(cfgEdit&&cfgEdit.MARKETING_AUTOMATION_ENABLED)} onChange={e=>setCfgEdit({...cfgEdit,MARKETING_AUTOMATION_ENABLED:e.target.checked})}/>Marketing</label>
+                  <label className="flex items-center gap-2"><input type="checkbox" checked={!!(cfgEdit&&cfgEdit.AI_AGENT_ENABLED)} onChange={e=>setCfgEdit({...cfgEdit,AI_AGENT_ENABLED:e.target.checked})}/>AI Agent</label>
+                  <label className="flex items-center gap-2"><input type="checkbox" checked={!!(cfgEdit&&cfgEdit.CLOSER_ENABLED)} onChange={e=>setCfgEdit({...cfgEdit,CLOSER_ENABLED:e.target.checked})}/>Closer</label>
+                  <label className="flex items-center gap-2"><input type="checkbox" checked={!!(cfgEdit&&cfgEdit.TYPING_ENABLED)} onChange={e=>setCfgEdit({...cfgEdit,TYPING_ENABLED:e.target.checked})}/>Typing</label>
+                </div>
+                <Button onClick={saveConfig}>Salvar configurações</Button>
+              </CardC>
+            </Card>
           </div>
         </div>
       );
@@ -1249,13 +1342,27 @@ function Dashboard() {
     return null;
   }
 
+  if(!adminKey.trim()){
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <Card className="w-full max-w-md">
+          <CardH><CardT grad>Acesso restrito</CardT><CardD>Informe a senha para entrar na interface.</CardD></CardH>
+          <CardC className="space-y-3">
+            <Input type="password" value={adminKey} onChange={e=>setAdminKey(e.target.value)} placeholder="Senha admin"/>
+            <Button onClick={()=>{localStorage.setItem("mk_admin",adminKey); refresh({initial:true});}}>Entrar</Button>
+          </CardC>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen">
       <Sidebar page={page} setPage={setPage} dark={dark} setDark={setDark} open={mobileOpen} setOpen={setMOpen} collapsed={sidebarCollapsed} setCollapsed={setCollapsed}/>
       {/* Botão flutuante para expandir sidebar (desktop, só quando colapsado) */}
       {sidebarCollapsed&&(
         <button onClick={()=>setCollapsed(false)} title="Expandir menu" className="hidden lg:flex fixed top-3 left-3 z-40 h-12 w-12 items-center justify-center rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform bg-zinc-900 border border-zinc-800">
-          <img src="data:image/webp;base64,__ICON_B64__" className="h-9 w-9 object-contain" alt="Menu"/>
+          <img src="https://syncronix.co/HEXACRONIX-ADESIVO-300x300.webp" className="h-9 w-9 object-contain" alt="Menu"/>
         </button>
       )}
       <MobileTopBar page={page} open={mobileOpen} setOpen={setMOpen} dark={dark} setDark={setDark}/>
@@ -1281,14 +1388,4 @@ ReactDOM.createRoot(document.getElementById("root")).render(<Dashboard/>);
 </script>
 </body>
 </html>"""
-    try:
-        import base64 as _b64, os as _os
-        _d = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
-        with open(_os.path.join(_d, "HEXACRONIX-ADESIVO-300x300.webp"), "rb") as _f:
-            _icon = _b64.b64encode(_f.read()).decode()
-        with open(_os.path.join(_d, "53c9d0b6-d91c-4826-902f-269cf93d8103.png"), "rb") as _f:
-            _logo = _b64.b64encode(_f.read()).decode()
-        _html = _html.replace("__ICON_B64__", _icon).replace("__LOGO_B64__", _logo)
-    except Exception:
-        pass
     return _html
