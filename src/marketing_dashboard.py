@@ -325,6 +325,32 @@ function Select({className="",...p}) {
   return <select className={cn("h-9 rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none cursor-pointer transition-all focus:border-brand-600/40 focus:ring-2 focus:ring-brand-600/15 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100",className)} {...p} />;
 }
 
+function Toggle({checked,onChange,label,desc}) {
+  return (
+    <div className="flex items-center justify-between gap-4 py-3 border-b border-zinc-100 dark:border-zinc-800 last:border-0">
+      <div className="min-w-0">
+        <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200 leading-tight">{label}</div>
+        {desc&&<div className="text-[11px] text-zinc-500 dark:text-zinc-500 mt-0.5 leading-snug">{desc}</div>}
+      </div>
+      <button onClick={()=>onChange(!checked)} className={cn("relative flex-shrink-0 h-6 w-11 rounded-full transition-colors duration-200",checked?"bg-brand-600":"bg-zinc-300 dark:bg-zinc-700")}>
+        <div className={cn("absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200",checked?"translate-x-5":"translate-x-0.5")}/>
+      </button>
+    </div>
+  );
+}
+
+function FieldRow({label,desc,children}) {
+  return (
+    <div className="space-y-1.5 py-3 border-b border-zinc-100 dark:border-zinc-800 last:border-0">
+      <div>
+        <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{label}</div>
+        {desc&&<div className="text-[11px] text-zinc-500 mt-0.5">{desc}</div>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
 function Empty({title,desc}) {
   return (
     <div className="flex min-h-[180px] flex-col items-center justify-center rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 p-8 text-center">
@@ -1384,10 +1410,36 @@ function Dashboard() {
 
               {seqEdit&&(
                 <div className="space-y-4">
-                  {/* Nome */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Nome</label>
-                    <Input value={seqEdit.name||""} onChange={e=>setSeqEdit({...seqEdit,name:e.target.value})} placeholder="Nome da sequência"/>
+                  {/* Metadados da sequência */}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Nome</label>
+                      <Input value={seqEdit.name||""} onChange={e=>setSeqEdit({...seqEdit,name:e.target.value})} placeholder="Nome da sequência"/>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Idioma</label>
+                      <Select value={seqEdit.language||""} onChange={e=>setSeqEdit({...seqEdit,language:e.target.value})} className="w-full">
+                        <option value="pt-BR">🇧🇷 Português (pt-BR)</option>
+                        <option value="en">🇺🇸 English (en)</option>
+                        <option value="es">🇪🇸 Español (es)</option>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Produto alvo</label>
+                      <Input value={seqEdit.target_product||""} onChange={e=>setSeqEdit({...seqEdit,target_product:e.target.value})} placeholder="ex: Efeito Camaleão"/>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Objetivo</label>
+                      <Input value={seqEdit.goal||""} onChange={e=>setSeqEdit({...seqEdit,goal:e.target.value})} placeholder="ex: upsell, onboarding"/>
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Produtos gatilho <span className="normal-case font-normal text-zinc-400">(separados por vírgula)</span></label>
+                      <Input value={(seqEdit.trigger_products||[]).join(", ")} onChange={e=>setSeqEdit({...seqEdit,trigger_products:e.target.value.split(",").map(s=>s.trim()).filter(Boolean)})} placeholder="ex: Chave do Poder, Key to Power"/>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Repetir último step a cada (h)</label>
+                      <Input type="number" min="0" value={seqEdit.repeat_last_every_hours??""} onChange={e=>setSeqEdit({...seqEdit,repeat_last_every_hours:e.target.value?parseInt(e.target.value):null})} placeholder="ex: 72 (0 = não repetir)"/>
+                    </div>
                   </div>
 
                   {/* Aviso opt-out */}
@@ -1473,61 +1525,127 @@ function Dashboard() {
 
     if(page==="system") {
       const attrByCurAll = perf.attributed_real_revenue_by_currency||[];
+      const cfg = cfgEdit||{};
+      const setCfg = (k,v) => setCfgEdit(p=>({...(p||{}), [k]:v}));
       return (
-        <div className="space-y-4 page-enter">
-          <PH title="Sistema" desc="Configuração operacional e leituras técnicas."/>
-          <div className="grid gap-3 grid-cols-2 xl:grid-cols-4">
+        <div className="space-y-5 page-enter">
+          <PH title="Sistema" desc="Configurações de automação, agente IA e leituras operacionais."/>
+
+          {/* KPIs */}
+          <section className="grid gap-3 grid-cols-2 xl:grid-cols-4">
             <Metric label="Scheduler"     value={health.scheduler_interval_seconds?`${health.scheduler_interval_seconds}s`:"—"} detail="Intervalo de execução"/>
             <Metric label="Sequências"    value={health.sequences_count}  detail="Jornadas carregadas"/>
-            <Metric label="Última compra" value={fmtDate(health.last_purchase_at)} detail="Webhook registrado"/>
+            <Metric label="Última compra" value={fmtDate(health.last_purchase_at)} detail="Webhook Hotmart"/>
             <Metric label="Último envio"  value={fmtDate(health.last_message_at)}  detail="Mensagem enviada"/>
-          </div>
-          <div className="grid gap-4 xl:grid-cols-3">
-            <Card>
-              <CardH><CardT grad>Configuração</CardT><CardD>Flags lidas pelo processo</CardD></CardH>
-              <CardC className="space-y-2">
-                {[
-                  {l:"Marketing automation",v:<Badge tone={health.marketing_enabled?"success":"warning"}>{String(!!health.marketing_enabled)}</Badge>},
-                  {l:"AI agent",            v:<Badge tone={health.ai_agent_enabled?"success":"warning"}>{String(!!health.ai_agent_enabled)}</Badge>},
-                  {l:"Receita real tracking",v:<Badge tone={attrByCurAll.length?"success":"muted"}>{attrByCurAll.length?"recebendo":"sem atribuição"}</Badge>},
-                ].map(({l,v})=>(
-                  <div key={l} className="flex items-center justify-between rounded-xl bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2.5 text-sm">
-                    <span className="text-zinc-500 dark:text-zinc-400">{l}</span>{v}
-                  </div>
-                ))}
+          </section>
+
+          <section className="grid gap-4 xl:grid-cols-2">
+
+            {/* ── Automação ── */}
+            <Card glow>
+              <CardH>
+                <CardT grad>Automação de Marketing</CardT>
+                <CardD>Controle quais módulos do sistema estão ativos e o ritmo do scheduler.</CardD>
+              </CardH>
+              <CardC className="divide-y divide-zinc-100 dark:divide-zinc-800 pb-0">
+                <Toggle checked={!!cfg.MARKETING_AUTOMATION_ENABLED} onChange={v=>setCfg("MARKETING_AUTOMATION_ENABLED",v)}
+                  label="Marketing Automation"
+                  desc="Habilita o envio automático de sequências de follow-up para compradores."/>
+                <Toggle checked={!!cfg.AI_AGENT_ENABLED} onChange={v=>setCfg("AI_AGENT_ENABLED",v)}
+                  label="Agente IA"
+                  desc="Ativa o agente de IA para responder mensagens recebidas no WhatsApp."/>
+                <Toggle checked={!!cfg.CLOSER_ENABLED} onChange={v=>setCfg("CLOSER_ENABLED",v)}
+                  label="Closer (modo vendas)"
+                  desc="Quando ativo, o agente usa prompt de fechamento de vendas."/>
+                <Toggle checked={!!cfg.TYPING_ENABLED} onChange={v=>setCfg("TYPING_ENABLED",v)}
+                  label="Indicador de digitação"
+                  desc="Simula 'digitando…' no WhatsApp antes de enviar cada mensagem."/>
+              </CardC>
+              <CardC className="pt-3 space-y-3">
+                <FieldRow label="Intervalo do Scheduler (segundos)" desc="Com que frequência o sistema verifica e envia mensagens pendentes.">
+                  <Input type="number" min="10" value={cfg.SCHEDULER_INTERVAL_SECONDS??30}
+                    onChange={e=>setCfg("SCHEDULER_INTERVAL_SECONDS",parseInt(e.target.value||"30"))}
+                    placeholder="30"/>
+                </FieldRow>
               </CardC>
             </Card>
+
+            {/* ── Agente IA ── */}
+            <Card glow>
+              <CardH>
+                <CardT grad>Agente IA</CardT>
+                <CardD>Modelo de linguagem, endpoint e comportamento de raciocínio.</CardD>
+              </CardH>
+              <CardC className="space-y-0 divide-y divide-zinc-100 dark:divide-zinc-800">
+                <FieldRow label="Modelo LLM" desc="ID do modelo de linguagem. Ex: openai/gpt-4o, anthropic/claude-3-5-sonnet.">
+                  <Input value={cfg.LLM_MODEL_ID||""} onChange={e=>setCfg("LLM_MODEL_ID",e.target.value)} placeholder="nvidia-kimi/moonshotai/kimi-k2.5"/>
+                </FieldRow>
+                <FieldRow label="URL da API LLM" desc="Endpoint compatível com OpenAI Chat Completions.">
+                  <Input value={cfg.LLM_API_URL||""} onChange={e=>setCfg("LLM_API_URL",e.target.value)} placeholder="http://localhost:18789/v1/chat/completions"/>
+                </FieldRow>
+                <FieldRow label="Nível de raciocínio (Thinking)" desc="Profundidade do chain-of-thought. Afeta velocidade e qualidade das respostas.">
+                  <Select value={cfg.THINKING_LEVEL||"high"} onChange={e=>setCfg("THINKING_LEVEL",e.target.value)} className="w-full">
+                    <option value="high">🔴 High — máximo de raciocínio (mais lento)</option>
+                    <option value="medium">🟡 Medium — equilíbrio velocidade/qualidade</option>
+                    <option value="low">🟢 Low — resposta rápida, raciocínio mínimo</option>
+                    <option value="none">⚪ None — sem chain-of-thought</option>
+                  </Select>
+                </FieldRow>
+                <FieldRow label="Máx. mensagens no histórico" desc="Quantas mensagens anteriores da conversa são enviadas ao modelo.">
+                  <Input type="number" min="1" max="50" value={cfg.MAX_HISTORY_MESSAGES??12}
+                    onChange={e=>setCfg("MAX_HISTORY_MESSAGES",parseInt(e.target.value||"12"))}
+                    placeholder="12"/>
+                </FieldRow>
+              </CardC>
+            </Card>
+          </section>
+
+          {/* Botão salvar */}
+          <div className="flex items-center gap-3">
+            <Btn tone="brand" className="px-8" onClick={saveConfig}>Salvar todas as configurações</Btn>
+            <p className="text-[11px] text-zinc-500">As alterações serão aplicadas. Algumas exigem reinício do serviço para ter efeito.</p>
+          </div>
+
+          {/* Status atual + Endpoints */}
+          <section className="grid gap-4 xl:grid-cols-2">
             <Card>
-              <CardH><CardT>Endpoints</CardT><CardD>Rotas úteis para operação</CardD></CardH>
+              <CardH><CardT>Status atual do sistema</CardT><CardD>Valores lidos em tempo real pelo processo</CardD></CardH>
               <CardC className="space-y-1.5">
-                {["/marketing/dashboard","/marketing/dashboard/data","/marketing/automation/stats","/marketing/automation/run-once","/marketing/hotmart/webhook"].map(ep=>(
-                  <div key={ep} className="flex items-center gap-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2 font-mono text-xs text-zinc-600 dark:text-zinc-400 hover:bg-brand-50 dark:hover:bg-brand-950/20 transition-colors cursor-default">
-                    <span className="text-brand-600 dark:text-brand-400 opacity-70 font-bold">GET</span>
-                    <span>{ep}</span>
+                {[
+                  {l:"Marketing Automation", v:<Badge tone={health.marketing_enabled?"success":"warning"}>{health.marketing_enabled?"ativo":"inativo"}</Badge>},
+                  {l:"Agente IA",            v:<Badge tone={health.ai_agent_enabled?"success":"warning"}>{health.ai_agent_enabled?"ativo":"inativo"}</Badge>},
+                  {l:"Sequências carregadas",v:<Badge tone="info">{health.sequences_count||0}</Badge>},
+                  {l:"Clientes concluídos",  v:<Badge tone="success">{health.completed_customers||0}</Badge>},
+                  {l:"Falhas recentes",      v:<Badge tone={(health.failed_messages||0)>0?"danger":"muted"}>{health.failed_messages||0}</Badge>},
+                  {l:"Receita atribuída WA", v:<Badge tone={attrByCurAll.length?"success":"muted"}>{attrByCurAll.length?attrByCurAll.map(r=>`${r.currency} ${r.value}`).join(" | "):"sem dados"}</Badge>},
+                ].map(({l,v})=>(
+                  <div key={l} className="flex items-center justify-between rounded-xl bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2.5">
+                    <span className="text-sm text-zinc-500 dark:text-zinc-400">{l}</span>{v}
                   </div>
                 ))}
               </CardC>
             </Card>
             <Card>
-              <CardH><CardT grad>Configurações do agente</CardT><CardD>Edite parâmetros principais sem sair da interface.</CardD></CardH>
-              <CardC className="space-y-2">
-                <Input value={(cfgEdit&&cfgEdit.LLM_MODEL_ID)||""} onChange={e=>setCfgEdit({...cfgEdit,LLM_MODEL_ID:e.target.value})} placeholder="LLM_MODEL_ID"/>
-                <Input value={(cfgEdit&&cfgEdit.LLM_API_URL)||""} onChange={e=>setCfgEdit({...cfgEdit,LLM_API_URL:e.target.value})} placeholder="LLM_API_URL"/>
-                <Input value={(cfgEdit&&cfgEdit.THINKING_LEVEL)||""} onChange={e=>setCfgEdit({...cfgEdit,THINKING_LEVEL:e.target.value})} placeholder="THINKING_LEVEL"/>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input type="number" value={(cfgEdit&&cfgEdit.MAX_HISTORY_MESSAGES)||12} onChange={e=>setCfgEdit({...cfgEdit,MAX_HISTORY_MESSAGES:parseInt(e.target.value||"12")})} placeholder="MAX_HISTORY_MESSAGES"/>
-                  <Input type="number" value={(cfgEdit&&cfgEdit.SCHEDULER_INTERVAL_SECONDS)||30} onChange={e=>setCfgEdit({...cfgEdit,SCHEDULER_INTERVAL_SECONDS:parseInt(e.target.value||"30")})} placeholder="SCHEDULER_INTERVAL_SECONDS"/>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <label className="flex items-center gap-2"><input type="checkbox" checked={!!(cfgEdit&&cfgEdit.MARKETING_AUTOMATION_ENABLED)} onChange={e=>setCfgEdit({...cfgEdit,MARKETING_AUTOMATION_ENABLED:e.target.checked})}/>Marketing</label>
-                  <label className="flex items-center gap-2"><input type="checkbox" checked={!!(cfgEdit&&cfgEdit.AI_AGENT_ENABLED)} onChange={e=>setCfgEdit({...cfgEdit,AI_AGENT_ENABLED:e.target.checked})}/>AI Agent</label>
-                  <label className="flex items-center gap-2"><input type="checkbox" checked={!!(cfgEdit&&cfgEdit.CLOSER_ENABLED)} onChange={e=>setCfgEdit({...cfgEdit,CLOSER_ENABLED:e.target.checked})}/>Closer</label>
-                  <label className="flex items-center gap-2"><input type="checkbox" checked={!!(cfgEdit&&cfgEdit.TYPING_ENABLED)} onChange={e=>setCfgEdit({...cfgEdit,TYPING_ENABLED:e.target.checked})}/>Typing</label>
-                </div>
-                <Btn tone="brand" onClick={saveConfig}>Salvar configurações</Btn>
+              <CardH><CardT>Endpoints da API</CardT><CardD>Rotas disponíveis para integração e operação</CardD></CardH>
+              <CardC className="space-y-1.5">
+                {[
+                  {m:"GET", ep:"/marketing/dashboard"},
+                  {m:"GET", ep:"/marketing/dashboard/data"},
+                  {m:"GET", ep:"/marketing/sequences"},
+                  {m:"PUT", ep:"/marketing/sequences/{id}"},
+                  {m:"GET", ep:"/marketing/agent/config"},
+                  {m:"PUT", ep:"/marketing/agent/config"},
+                  {m:"POST",ep:"/marketing/automation/run-once"},
+                  {m:"POST",ep:"/marketing/hotmart/webhook"},
+                ].map(({m,ep})=>(
+                  <div key={ep} className="flex items-center gap-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2 font-mono text-xs text-zinc-600 dark:text-zinc-400">
+                    <span className={cn("font-bold w-9 flex-shrink-0",m==="GET"?"text-brand-600 dark:text-brand-400":m==="PUT"?"text-sky-500":"text-purple-500")}>{m}</span>
+                    <span className="truncate">{ep}</span>
+                  </div>
+                ))}
               </CardC>
             </Card>
-          </div>
+          </section>
         </div>
       );
     }
