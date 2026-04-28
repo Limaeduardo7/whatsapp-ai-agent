@@ -709,53 +709,71 @@ function OverviewPage({stats,analytics,health,perf,loading,attrBRL,attrLabel,cus
   return (
     <div className="space-y-5 page-enter">
       <PH title="Overview" desc="Indicadores executivos, funil e saúde da automação."/>
-      <section className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-        <Metric label="Clientes"       value={stats.customers_total}               detail="Base monitorada"      icon="◎"/>
-        <Metric label="Ativos"         value={stats.customers_active}              detail="Em sequência"         tone="success" icon="▲"/>
-        <Metric label="Aguard. compra" value={stats.customers_waiting_purchase}    detail="Fim da jornada"       tone="warning" icon="◷"/>
-        <Metric label="Compras"        value={stats.purchases_total}               detail="Eventos Hotmart"      icon="◈"/>
-        <Metric label="Mensagens"      value={stats.messages_sent_total}           detail={`${health.failed_messages||0} falhas`} tone={(health.failed_messages||0)>0?"danger":"default"} icon="◫"/>
-        <Metric label="Vendas WA"      value={perf.attributed_sales_whatsapp||0}  detail="via UTM/SCK"          tone="success" icon="◉"/>
-        <Metric label="Receita WA"     value={typeof attrBRL==="number"?attrBRL:null} detail={attrLabel}        tone="info"    icon="◆"/>
+
+      {/* ── Linha 1: 4 KPIs de audiência ── */}
+      <section className="grid gap-3 grid-cols-2 md:grid-cols-4">
+        <Metric label="Clientes"       value={stats.customers_total}            detail="Base monitorada"   icon="◎"/>
+        <Metric label="Ativos"         value={stats.customers_active}           detail="Em sequência"      tone="success" icon="▲"/>
+        <Metric label="Aguard. compra" value={stats.customers_waiting_purchase} detail="Fim da jornada"    tone="warning" icon="◷"/>
+        <Metric label="Compras"        value={stats.purchases_total}            detail="Eventos Hotmart"   icon="◈"/>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
+      {/* ── Linha 2: 3 KPIs de resultado ── */}
+      <section className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+        <Metric label="Mensagens"  value={stats.messages_sent_total}                   detail={`${health.failed_messages||0} falhas`} tone={(health.failed_messages||0)>0?"danger":"default"} icon="◫"/>
+        <Metric label="Vendas WA"  value={perf.attributed_sales_whatsapp||0}           detail="via UTM/SCK"   tone="success" icon="◉"/>
+        <Metric label="Receita WA" value={typeof attrBRL==="number"?attrBRL:null}      detail={attrLabel}     tone="info"    icon="◆"/>
+      </section>
+
+      {/* ── Linha 3: Funil + Volume diário + Pie ── */}
+      <section className="grid gap-4 lg:grid-cols-[1fr_1.2fr] xl:grid-cols-[1fr_1.4fr_1fr]">
         <Card glow>
-          <CardH><CardT grad>Funil de conversão</CardT><CardD>Etapas com taxas de conversão acumuladas e step-a-step</CardD></CardH>
-          <CardC>{loading?<Skeleton rows={6}/>:<EChart option={funnelOpt} height={340} dark={dark}/>}</CardC>
+          <CardH><CardT grad>Funil de conversão</CardT><CardD>Taxas acumuladas e step-a-step</CardD></CardH>
+          <CardC>{loading?<Skeleton rows={6}/>:<EChart option={funnelOpt} height={300} dark={dark}/>}</CardC>
         </Card>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {[
-            {l:"Marketing",     v:<Badge tone={health.marketing_enabled?"success":"warning"}>{health.marketing_enabled?"ligado":"desligado"}</Badge>},
-            {l:"Scheduler",     v:<span className="font-mono text-xs">{health.scheduler_interval_seconds||"—"}s</span>},
-            {l:"Sequências",    v:<span className="font-bold">{health.sequences_count||0}</span>},
-            {l:"Concluídas",    v:<span className="font-bold grad-text">{health.completed_customers||0}</span>},
-            {l:"Última compra", v:<span className="text-[11px]">{fmtDate(health.last_purchase_at)}</span>},
-            {l:"Falhas",        v:<Badge tone={(health.failed_messages||0)>0?"danger":"success"}>{health.failed_messages||0}</Badge>},
-          ].map(({l,v},i)=>(
-            <Card key={i} className="flex items-center justify-between px-4 py-3 gap-2">
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">{l}</span>
-              <span className="text-xs font-medium">{v}</span>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
         <Card glow>
           <CardH><CardT grad>Volume diário</CardT><CardD>Compras e mensagens — últimos 14 dias</CardD></CardH>
-          <CardC>{loading?<Skeleton rows={4}/>:<EChart option={areaOpt} height={240} dark={dark}/>}</CardC>
+          <CardC>{loading?<Skeleton rows={4}/>:<EChart option={areaOpt} height={260} dark={dark}/>}</CardC>
         </Card>
-        <Card>
+        <Card className="hidden xl:flex xl:flex-col">
           <CardH><CardT>Distribuição de status</CardT><CardD>Clientes por estado atual</CardD></CardH>
-          <CardC>{loading?<Skeleton rows={4}/>:<EChart option={pieOpt} height={280} dark={dark}/>}</CardC>
+          <CardC className="flex-1">{loading?<Skeleton rows={4}/>:<EChart option={pieOpt} height={260} dark={dark}/>}</CardC>
         </Card>
       </section>
 
-      <Card>
-        <CardH><CardT>Tendência de falhas — 7 dias</CardT><CardD>Volume enviado vs falhas vs taxa percentual</CardD></CardH>
-        <CardC>{loading?<Skeleton rows={3}/>:<EChart option={failOpt} height={200} dark={dark}/>}</CardC>
+      {/* Pie separado em telas < xl */}
+      <Card className="xl:hidden">
+        <CardH><CardT>Distribuição de status</CardT><CardD>Clientes por estado atual</CardD></CardH>
+        <CardC>{loading?<Skeleton rows={4}/>:<EChart option={pieOpt} height={260} dark={dark}/>}</CardC>
       </Card>
+
+      {/* ── Linha 4: Saúde do sistema + Tendência de falhas ── */}
+      <section className="grid gap-4 lg:grid-cols-[1fr_1.6fr]">
+        <Card>
+          <CardH><CardT>Saúde do sistema</CardT><CardD>Indicadores operacionais em tempo real</CardD></CardH>
+          <CardC>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                {l:"Marketing",     v:<Badge tone={health.marketing_enabled?"success":"warning"}>{health.marketing_enabled?"ligado":"desligado"}</Badge>},
+                {l:"Scheduler",     v:<span className="font-mono text-xs font-semibold">{health.scheduler_interval_seconds||"—"}s</span>},
+                {l:"Sequências",    v:<span className="font-bold text-zinc-800 dark:text-zinc-200">{health.sequences_count||0}</span>},
+                {l:"Concluídas",    v:<span className="font-bold grad-text">{health.completed_customers||0}</span>},
+                {l:"Última compra", v:<span className="text-[11px] text-zinc-500">{fmtDate(health.last_purchase_at)}</span>},
+                {l:"Falhas",        v:<Badge tone={(health.failed_messages||0)>0?"danger":"success"}>{health.failed_messages||0}</Badge>},
+              ].map(({l,v},i)=>(
+                <div key={i} className="flex flex-col gap-1 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2.5">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">{l}</span>
+                  <span className="text-sm">{v}</span>
+                </div>
+              ))}
+            </div>
+          </CardC>
+        </Card>
+        <Card>
+          <CardH><CardT>Tendência de falhas — 7 dias</CardT><CardD>Volume enviado vs falhas vs taxa percentual</CardD></CardH>
+          <CardC>{loading?<Skeleton rows={3}/>:<EChart option={failOpt} height={220} dark={dark}/>}</CardC>
+        </Card>
+      </section>
     </div>
   );
 }
