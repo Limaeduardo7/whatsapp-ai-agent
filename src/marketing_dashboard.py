@@ -77,6 +77,8 @@ def render_marketing_dashboard() -> str:
 
     .trow { transition:background 0.12s; }
     .bnav { backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); }
+    .scrollbar-none { scrollbar-width:none; }
+    .scrollbar-none::-webkit-scrollbar { display:none; }
   </style>
 </head>
 <body class="bg-zinc-50 text-zinc-950 antialiased dark:bg-zinc-950 dark:text-zinc-50 transition-colors duration-300">
@@ -289,10 +291,10 @@ function Toasts({toasts}) {
 function Card({className="",glow=false,children}) {
   return <div className={cn("rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 transition-all duration-200",glow&&"glow-card",className)}>{children}</div>;
 }
-function CardH({children,className=""}) { return <div className={cn("flex flex-col gap-1 p-5 pb-3",className)}>{children}</div>; }
+function CardH({children,className=""}) { return <div className={cn("flex flex-col gap-1 p-4 sm:p-5 pb-3",className)}>{children}</div>; }
 function CardT({children,grad=false}) { return <h3 className={cn("text-sm font-semibold tracking-tight",grad&&"grad-text")}>{children}</h3>; }
 function CardD({children}) { return <p className="text-xs text-zinc-500 dark:text-zinc-400">{children}</p>; }
-function CardC({className="",children}) { return <div className={cn("p-5 pt-2",className)}>{children}</div>; }
+function CardC({className="",children}) { return <div className={cn("p-4 sm:p-5 pt-2",className)}>{children}</div>; }
 
 function Btn({active,tone="default",size="md",className="",children,...p}) {
   const sz={sm:"h-7 px-2.5 text-xs",md:"h-9 px-3.5 text-sm",lg:"h-10 px-4 text-sm"};
@@ -378,7 +380,7 @@ function Table({columns,rows,empty,emptyDesc,onRow,selKey}) {
   if (!rows.length) return <Empty title={empty} desc={emptyDesc}/>;
   return (
     <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
-      <div className="max-h-[520px] overflow-auto">
+      <div className="max-h-[55vh] overflow-auto">
         <table className="w-full border-collapse text-sm">
           <thead className="sticky top-0 z-10">
             <tr className="bg-zinc-50/95 dark:bg-zinc-900/95 backdrop-blur-sm">
@@ -429,7 +431,7 @@ function Metric({label,value,detail,tone="default",icon,sub}) {
           <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">{label}</p>
           {icon&&<span className="text-xl opacity-25">{icon}</span>}
         </div>
-        <div className={cn("text-3xl font-extrabold tracking-tight leading-none",num)}>
+        <div className={cn("text-2xl lg:text-3xl font-extrabold tracking-tight leading-none",num)}>
           <AnimNum value={value}/>
         </div>
         {detail&&<div className="mt-2 text-[11px] text-zinc-400 dark:text-zinc-500">{detail}</div>}
@@ -444,7 +446,7 @@ function PH({title,desc,children}) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h2 className="text-xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">{title}</h2>
+        <h2 className="text-lg sm:text-xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">{title}</h2>
         {desc&&<p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">{desc}</p>}
       </div>
       {children}
@@ -464,19 +466,19 @@ function Controls({query,setQuery,statusFilter,setStatusFilter,customers,showSta
         <Input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar…" className="pl-8"/>
       </div>
       {showStatus&&(
-        <Select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} className="w-40">
+        <Select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} className="flex-1 min-w-[130px] sm:flex-none sm:w-40">
           <option value="all">Todos os status</option>
           {[...new Set(customers.map(r=>r.status).filter(Boolean))].map(s=><option key={s} value={s}>{s}</option>)}
         </Select>
       )}
       {showSeqFilter&&(
-        <Select value={seqFilter} onChange={e=>setSeqFilter(e.target.value)} className="w-44">
+        <Select value={seqFilter} onChange={e=>setSeqFilter(e.target.value)} className="flex-1 min-w-[130px] sm:flex-none sm:w-44">
           <option value="all">Todas as sequências</option>
           {seqIds.map(id=><option key={id} value={id}>{id}</option>)}
         </Select>
       )}
       {showDateRange&&(
-        <Select value={dateRange} onChange={e=>setDateRange(e.target.value)} className="w-36">
+        <Select value={dateRange} onChange={e=>setDateRange(e.target.value)} className="flex-1 min-w-[120px] sm:flex-none sm:w-36">
           <option value="all">Qualquer data</option>
           <option value="7">Últimos 7 dias</option>
           <option value="14">Últimos 14 dias</option>
@@ -559,13 +561,13 @@ function MobileTopBar({page,open,setOpen,dark,setDark}) {
 function BottomNav({page,setPage}) {
   return (
     <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bnav border-t border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90">
-      <div className="flex">
-        {NAV.slice(0,5).map(({key,label,icon})=>(
+      <div className="flex overflow-x-auto scrollbar-none">
+        {NAV.map(({key,label,icon})=>(
           <button key={key} onClick={()=>setPage(key)}
-            className={cn("flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-semibold transition-all",page===key?"text-brand-600":"text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300")}>
-            <span className={cn("text-lg leading-none transition-transform",page===key&&"scale-110")}>{icon}</span>
-            <span className="leading-none">{label}</span>
-            {page===key&&<div className="h-0.5 w-4 rounded-full bg-brand-600"/>}
+            className={cn("flex flex-col items-center gap-0.5 py-2 px-1 min-w-[48px] flex-1 text-[9px] font-semibold transition-all",page===key?"text-brand-600":"text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300")}>
+            <span className={cn("text-base leading-none transition-transform",page===key&&"scale-110")}>{icon}</span>
+            <span className="leading-none truncate max-w-[46px] text-center">{label}</span>
+            {page===key&&<div className="h-0.5 w-3 rounded-full bg-brand-600"/>}
           </button>
         ))}
       </div>
@@ -707,7 +709,7 @@ function OverviewPage({stats,analytics,health,perf,loading,attrBRL,attrLabel,cus
   return (
     <div className="space-y-5 page-enter">
       <PH title="Overview" desc="Indicadores executivos, funil e saúde da automação."/>
-      <section className="grid gap-3 grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
+      <section className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
         <Metric label="Clientes"       value={stats.customers_total}               detail="Base monitorada"      icon="◎"/>
         <Metric label="Ativos"         value={stats.customers_active}              detail="Em sequência"         tone="success" icon="▲"/>
         <Metric label="Aguard. compra" value={stats.customers_waiting_purchase}    detail="Fim da jornada"       tone="warning" icon="◷"/>
@@ -856,7 +858,7 @@ function AnalyticsPage({analytics,dark,loading}) {
       <PH title="Analytics" desc="Coortes, conversão por sequência, engajamento e atribuição avançada."/>
 
       {/* KPIs analíticos */}
-      <section className="grid gap-3 grid-cols-2 md:grid-cols-4">
+      <section className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         <Metric label="Melhor sequência"  value={seqAna[0]?.conversion_rate??0} detail={seqAna[0]?.name||"—"} tone="success" sub="% conversão"/>
         <Metric label="Mediana conversão" value={ttc.available?ttc.median:null}  detail="dias do 1º purchase" tone="info"/>
         <Metric label="Clientes analisados" value={Object.keys(analytics.engagement_scores||{}).length} detail="com score de engajamento"/>
@@ -1011,10 +1013,10 @@ function FlowEditor({seqEdit,setSeqEdit}) {
   const delayLabel = h => h==null?"—":h>=48?`${Math.round(h/24)}d`:h===24?"1d":`${h}h`;
 
   return (
-    <div className="flex rounded-2xl border border-zinc-800 overflow-hidden" style={{height:"640px"}}>
+    <div className="flex flex-col md:flex-row rounded-2xl border border-zinc-800 overflow-hidden" style={{minHeight:"520px"}}>
 
       {/* ── Canvas ── */}
-      <div className="flex-1 bg-zinc-950 dot-grid overflow-auto">
+      <div className="flex-1 bg-zinc-950 dot-grid overflow-auto" style={{minHeight:"340px"}}>
         <div className="flex flex-col items-center py-8 px-4">
 
           {/* Trigger */}
@@ -1109,7 +1111,7 @@ function FlowEditor({seqEdit,setSeqEdit}) {
       </div>
 
       {/* ── Right panel ── */}
-      <div className="w-80 flex-shrink-0 border-l border-zinc-800 bg-zinc-900 flex flex-col">
+      <div className="md:w-80 flex-shrink-0 border-t md:border-t-0 md:border-l border-zinc-800 bg-zinc-900 flex flex-col">
         {steps.length>0?(
           <>
             {/* Panel header */}
@@ -1140,7 +1142,7 @@ function FlowEditor({seqEdit,setSeqEdit}) {
                 <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Mensagem</label>
                 <textarea
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-950/60 px-3 py-2.5 text-xs leading-relaxed text-zinc-200 outline-none focus:border-brand-600/50 focus:ring-2 focus:ring-brand-600/10 transition-all resize-none"
-                  style={{minHeight:"260px"}}
+                  style={{minHeight:"180px"}}
                   value={cur.text||""}
                   onChange={e=>updStep(sel,{text:e.target.value})}
                   placeholder={"Olá! 👋\n\nEscreva sua mensagem aqui…\n\nPara sair, responda SAIR"}
@@ -1501,7 +1503,7 @@ function Dashboard() {
       <div className="space-y-4 page-enter">
         <PH title="Contatos" desc="Operação por contato, histórico e ações manuais."/>
         <Controls query={query} setQuery={setQuery} statusFilter={statusFilter} setStatusFilter={setSF} customers={customers} showStatus sequences={sequences} seqFilter={seqFilter} setSeqFilter={setSeqFilter} showSeqFilter onRefresh={refresh} refreshing={refreshing}/>
-        <div className="grid gap-4 xl:grid-cols-[1.4fr_0.8fr]">
+        <div className="grid gap-4 lg:grid-cols-[1.4fr_360px]">
           <Card>
             <CardH><CardT>Base de contatos</CardT><CardD>{filtC.length} encontrados · coluna Score = engajamento 0–100</CardD></CardH>
             <CardC><Table columns={colC} rows={filtC} selKey={selPhone} onRow={r=>setSelPhone(r.phone)} empty="Nenhum contato" emptyDesc="Ajuste filtros ou aguarde eventos."/></CardC>
@@ -1525,7 +1527,7 @@ function Dashboard() {
           <div className="grid gap-4 xl:grid-cols-[1fr_0.9fr]">
             <Card><CardH><CardT>Compras recentes</CardT><CardD>{filtP.length} registros</CardD></CardH><CardC><Table columns={colP} rows={filtP} empty="Nenhuma compra" emptyDesc="Aguarde eventos."/></CardC></Card>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
                 <Card glow><CardC className="pt-5"><div className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1.5">Vendas WA</div><div className="text-2xl font-extrabold grad-text"><AnimNum value={perf.attributed_sales_whatsapp||0}/></div></CardC></Card>
                 <Card glow><CardC className="pt-5"><div className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1.5">Receita WA</div><div className="text-base font-bold text-sky-600 dark:text-sky-400">{fmtMoney(attrBRL)}</div><div className="text-[10px] text-zinc-400 mt-0.5 truncate">{attrLabel}</div></CardC></Card>
               </div>
@@ -1619,7 +1621,7 @@ function Dashboard() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Select value={seqEditId} onChange={e=>{const id=e.target.value;setSeqEditId(id);const s=sequences.find(x=>x.id===id);setSeqEdit(s?JSON.parse(JSON.stringify(s)):null);}} className="w-64">
+                  <Select value={seqEditId} onChange={e=>{const id=e.target.value;setSeqEditId(id);const s=sequences.find(x=>x.id===id);setSeqEdit(s?JSON.parse(JSON.stringify(s)):null);}} className="flex-1 sm:w-64 sm:flex-none">
                     {sequences.map(s=><option key={s.id} value={s.id}>{s.name||s.id}</option>)}
                   </Select>
                   {seqEdit&&<Btn size="sm" tone="ghost" onClick={()=>{const s=sequences.find(x=>x.id===seqEditId);setSeqEdit(s?JSON.parse(JSON.stringify(s)):null);toast("Alterações descartadas.","info");}}>↩</Btn>}
@@ -1838,7 +1840,7 @@ function Dashboard() {
       )}
       <MobileTopBar page={page} open={mobileOpen} setOpen={setMOpen} dark={dark} setDark={setDark}/>
       <main className={cn("min-h-screen pt-14 pb-20 lg:pt-0 lg:pb-0 transition-all duration-300", sidebarCollapsed?"lg:ml-0":"lg:ml-64")}>
-        <div className="mx-auto max-w-[1400px] space-y-5 px-4 py-5 lg:px-6 lg:py-6">
+        <div className="mx-auto max-w-[1400px] space-y-4 px-3 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-6">
           {error&&(
             <div className="flex items-start gap-3 rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-700 dark:text-red-400">
               <span className="text-lg mt-0.5">⚠</span>
