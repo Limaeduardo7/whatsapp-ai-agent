@@ -978,6 +978,221 @@ function AnalyticsPage({analytics,dark,loading}) {
   );
 }
 
+// ─── Flow Editor (ManyChat-style) ────────────────────────────────────────────
+function FlowEditor({seqEdit,setSeqEdit}) {
+  const [sel,setSel]         = useState(0);
+  const [dragIdx,setDragIdx] = useState(null);
+  const [dragOver,setDragOver]= useState(null);
+  if(!seqEdit) return null;
+
+  const steps = seqEdit.steps||[];
+  const hasOpt = txt => /\b(SAIR|STOP|SALIR)\b/i.test(txt||"");
+
+  function updStep(i,patch){
+    const ns=[...steps]; ns[i]={...ns[i],...patch}; setSeqEdit({...seqEdit,steps:ns});
+  }
+  function addStep(after){
+    const ns=[...steps]; ns.splice(after+1,0,{text:"",delay_hours_after:24});
+    setSeqEdit({...seqEdit,steps:ns}); setSel(after+1);
+  }
+  function removeStep(i){
+    if(steps.length<=1) return;
+    const ns=steps.filter((_,j)=>j!==i);
+    setSeqEdit({...seqEdit,steps:ns}); setSel(Math.min(sel,ns.length-1));
+  }
+  function moveStep(from,to){
+    if(from===to||from==null) return;
+    const ns=[...steps]; const [item]=ns.splice(from,1); ns.splice(to,0,item);
+    setSeqEdit({...seqEdit,steps:ns}); setSel(to);
+    setDragIdx(null); setDragOver(null);
+  }
+
+  const cur = steps[sel]||steps[0]||{};
+  const delayLabel = h => h==null?"—":h>=48?`${Math.round(h/24)}d`:h===24?"1d":`${h}h`;
+
+  return (
+    <div className="flex rounded-2xl border border-zinc-800 overflow-hidden" style={{height:"640px"}}>
+
+      {/* ── Canvas ── */}
+      <div className="flex-1 bg-zinc-950 dot-grid overflow-auto">
+        <div className="flex flex-col items-center py-8 px-4">
+
+          {/* Trigger */}
+          <div className="flex items-center gap-2.5 rounded-2xl border border-brand-600/30 bg-brand-950/20 px-5 py-2.5 text-sm font-semibold text-brand-400 shadow-glow-sm select-none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Trigger: Compra confirmada
+          </div>
+
+          {steps.map((step,i)=>{
+            const ok=hasOpt(step.text);
+            const preview=(step.text||"").split("\n")[0].slice(0,55)||"";
+            const chars=(step.text||"").length;
+            const isSelected=sel===i;
+            const isDragging=dragIdx===i;
+            const isOver=dragOver===i&&dragIdx!==i;
+            return (
+              <React.Fragment key={i}>
+                {/* Connector + delay badge */}
+                <div className="flex flex-col items-center pointer-events-none">
+                  <div className="w-px h-5 bg-zinc-800"/>
+                  <div className="flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1 text-[10px] font-mono text-zinc-500 select-none">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    {delayLabel(step.delay_hours_after)}
+                  </div>
+                  <div className="w-px h-3 bg-zinc-800"/>
+                  <svg width="8" height="6" viewBox="0 0 8 6" fill="#3f3f46"><polygon points="0,0 8,0 4,6"/></svg>
+                </div>
+
+                {/* Step node */}
+                <div
+                  draggable
+                  onDragStart={()=>setDragIdx(i)}
+                  onDragOver={e=>{e.preventDefault();setDragOver(i);}}
+                  onDrop={()=>moveStep(dragIdx,i)}
+                  onDragEnd={()=>{setDragIdx(null);setDragOver(null);}}
+                  onClick={()=>setSel(i)}
+                  className={cn(
+                    "w-72 rounded-2xl border cursor-pointer transition-all duration-150 select-none",
+                    isSelected?"border-brand-600/60 bg-zinc-900 shadow-glow-sm":"border-zinc-800 bg-zinc-900/60 hover:border-zinc-700",
+                    isDragging&&"opacity-30 scale-95",
+                    isOver&&"border-brand-600/40 scale-[1.02]"
+                  )}
+                >
+                  {/* Node header */}
+                  <div className="flex items-center justify-between px-3 pt-2.5 pb-2 border-b border-zinc-800/70">
+                    <div className="flex items-center gap-2">
+                      <span className="text-zinc-600 hover:text-zinc-400 cursor-grab text-base leading-none select-none">⠿</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Step {i+1}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {!ok&&<span className="text-[9px] font-bold text-amber-500 uppercase tracking-wide">⚠ opt-out</span>}
+                      <span className={cn("text-[10px] tabular-nums",chars<10&&chars>0?"text-red-400":chars>1600?"text-amber-400":"text-zinc-600")}>{chars}c</span>
+                      {steps.length>1&&(
+                        <button onClick={e=>{e.stopPropagation();removeStep(i);}} className="h-5 w-5 flex items-center justify-center rounded-md text-zinc-600 hover:bg-red-950/40 hover:text-red-400 transition-colors">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {/* Node body */}
+                  <div className="flex gap-2.5 px-3 py-3">
+                    <div className="h-8 w-8 flex-shrink-0 rounded-xl bg-brand-950/30 border border-brand-600/20 flex items-center justify-center text-base">💬</div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-zinc-300 leading-relaxed line-clamp-2">
+                        {preview||<span className="text-zinc-600 italic">Mensagem vazia…</span>}
+                      </p>
+                      {(step.text||"").includes("\n")&&<p className="text-[10px] text-zinc-600 mt-0.5">{(step.text||"").split("\n").length} linhas</p>}
+                    </div>
+                  </div>
+                  {isSelected&&<div className="h-0.5 aurora rounded-b-2xl"/>}
+                </div>
+
+                {/* Add-step button between nodes */}
+                <div className="flex flex-col items-center">
+                  <div className="w-px h-3 bg-zinc-800"/>
+                  <button
+                    onClick={e=>{e.stopPropagation();addStep(i);}}
+                    className="h-6 w-6 rounded-full border border-dashed border-zinc-700 bg-zinc-900 text-zinc-500 hover:border-brand-600/60 hover:text-brand-400 hover:bg-brand-950/20 transition-all flex items-center justify-center text-sm leading-none"
+                    title="Adicionar step aqui"
+                  >+</button>
+                  {i<steps.length-1&&<div className="w-px h-3 bg-zinc-800"/>}
+                </div>
+              </React.Fragment>
+            );
+          })}
+
+          {/* End node */}
+          <div className="mt-1 rounded-2xl border border-zinc-800 bg-zinc-900/40 px-5 py-2 text-[11px] text-zinc-600 font-medium select-none">
+            ■ Fim da sequência
+          </div>
+        </div>
+      </div>
+
+      {/* ── Right panel ── */}
+      <div className="w-80 flex-shrink-0 border-l border-zinc-800 bg-zinc-900 flex flex-col">
+        {steps.length>0?(
+          <>
+            {/* Panel header */}
+            <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between">
+              <div>
+                <div className="text-sm font-semibold text-zinc-200">Step {sel+1} <span className="text-zinc-600 font-normal">de {steps.length}</span></div>
+                <div className={cn("text-[11px] mt-0.5 flex items-center gap-1",hasOpt(cur.text)?"text-brand-400":"text-amber-500")}>
+                  {hasOpt(cur.text)?(
+                    <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Opt-out presente</>
+                  ):(
+                    <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Falta SAIR / STOP / SALIR</>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-1">
+                <button disabled={sel===0} onClick={()=>setSel(s=>s-1)} className="h-7 w-7 flex items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-800 disabled:opacity-30 transition-colors">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <button disabled={sel>=steps.length-1} onClick={()=>setSel(s=>s+1)} className="h-7 w-7 flex items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-800 disabled:opacity-30 transition-colors">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Textarea */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Mensagem</label>
+                <textarea
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-950/60 px-3 py-2.5 text-xs leading-relaxed text-zinc-200 outline-none focus:border-brand-600/50 focus:ring-2 focus:ring-brand-600/10 transition-all resize-none"
+                  style={{minHeight:"260px"}}
+                  value={cur.text||""}
+                  onChange={e=>updStep(sel,{text:e.target.value})}
+                  placeholder={"Olá! 👋\n\nEscreva sua mensagem aqui…\n\nPara sair, responda SAIR"}
+                />
+                <div className="flex justify-between text-[10px] text-zinc-600">
+                  <span>{(cur.text||"").split("\n").length} linhas</span>
+                  <span className={(cur.text||"").length>1600?"text-amber-400":""}>{(cur.text||"").length} chars</span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Delay após step anterior</label>
+                <div className="flex gap-2 items-center">
+                  <Input type="number" min="0" value={cur.delay_hours_after??24} onChange={e=>updStep(sel,{delay_hours_after:parseInt(e.target.value||"24")})} className="w-24"/>
+                  <span className="text-xs text-zinc-500">horas → <b className="text-zinc-300">{delayLabel(cur.delay_hours_after??24)}</b></span>
+                </div>
+              </div>
+
+              {/* Step nav chips */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Steps</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {steps.map((_,i)=>(
+                    <button key={i} onClick={()=>setSel(i)}
+                      className={cn("h-7 min-w-[28px] px-2 rounded-lg text-[11px] font-semibold transition-all",
+                        i===sel?"bg-brand-600 text-white shadow-glow-sm":hasOpt(steps[i].text)?"bg-zinc-800 text-zinc-400 hover:bg-zinc-700":"bg-amber-950/40 text-amber-500 border border-amber-700/30 hover:bg-amber-950/60"
+                      )}>
+                      {i+1}
+                    </button>
+                  ))}
+                  <button onClick={()=>addStep(steps.length-1)} className="h-7 w-7 rounded-lg border border-dashed border-zinc-700 text-zinc-500 hover:border-brand-600/60 hover:text-brand-400 transition-all text-sm flex items-center justify-center">+</button>
+                </div>
+              </div>
+            </div>
+
+            {/* Panel footer */}
+            <div className="p-3 border-t border-zinc-800">
+              {steps.length>1&&(
+                <Btn size="sm" tone="danger" className="w-full" onClick={()=>removeStep(sel)}>Remover step {sel+1}</Btn>
+              )}
+            </div>
+          </>
+        ):(
+          <div className="flex-1 flex items-center justify-center p-6">
+            <Empty title="Sem steps" desc="Use o botão + no canvas para adicionar."/>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Login Screen ─────────────────────────────────────────────────────────────
 function LoginScreen({onLogin}) {
   const [pwd,setPwd]       = useState("");
@@ -1393,109 +1608,64 @@ function Dashboard() {
               </CardC>
             </Card>
           </div>
+          {/* ── Flow Editor ── */}
           <Card>
             <CardH>
-              <div className="flex items-center justify-between gap-2">
-                <div><CardT grad>Editor de sequência</CardT><CardD>Edite textos, delays e steps da jornada.</CardD></div>
-                {seqEdit&&(
-                  <Btn size="sm" tone="ghost" onClick={()=>{const s=sequences.find(x=>x.id===seqEditId); setSeqEdit(s?JSON.parse(JSON.stringify(s)):null); toast("Alterações descartadas.","info");}}>↩ Descartar</Btn>
-                )}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <CardT grad>Editor visual de sequência</CardT>
+                    <CardD>Selecione, arraste e edite cada step no fluxo.</CardD>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select value={seqEditId} onChange={e=>{const id=e.target.value;setSeqEditId(id);const s=sequences.find(x=>x.id===id);setSeqEdit(s?JSON.parse(JSON.stringify(s)):null);}} className="w-64">
+                    {sequences.map(s=><option key={s.id} value={s.id}>{s.name||s.id}</option>)}
+                  </Select>
+                  {seqEdit&&<Btn size="sm" tone="ghost" onClick={()=>{const s=sequences.find(x=>x.id===seqEditId);setSeqEdit(s?JSON.parse(JSON.stringify(s)):null);toast("Alterações descartadas.","info");}}>↩</Btn>}
+                </div>
               </div>
             </CardH>
-            <CardC className="space-y-4">
-              {/* Seletor de sequência */}
-              <Select value={seqEditId} onChange={e=>{const id=e.target.value; setSeqEditId(id); const s=sequences.find(x=>x.id===id); setSeqEdit(s?JSON.parse(JSON.stringify(s)):null);}}>
-                {sequences.map(s=><option key={s.id} value={s.id}>{s.name||s.id}</option>)}
-              </Select>
+            <CardC className="space-y-4 pt-2">
 
+              {/* Metadados */}
               {seqEdit&&(
-                <div className="space-y-4">
-                  {/* Metadados da sequência */}
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Nome</label>
-                      <Input value={seqEdit.name||""} onChange={e=>setSeqEdit({...seqEdit,name:e.target.value})} placeholder="Nome da sequência"/>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Idioma</label>
-                      <Select value={seqEdit.language||""} onChange={e=>setSeqEdit({...seqEdit,language:e.target.value})} className="w-full">
-                        <option value="pt-BR">🇧🇷 Português (pt-BR)</option>
-                        <option value="en">🇺🇸 English (en)</option>
-                        <option value="es">🇪🇸 Español (es)</option>
-                      </Select>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Produto alvo</label>
-                      <Input value={seqEdit.target_product||""} onChange={e=>setSeqEdit({...seqEdit,target_product:e.target.value})} placeholder="ex: Efeito Camaleão"/>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Objetivo</label>
-                      <Input value={seqEdit.goal||""} onChange={e=>setSeqEdit({...seqEdit,goal:e.target.value})} placeholder="ex: upsell, onboarding"/>
-                    </div>
-                    <div className="space-y-1 sm:col-span-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Produtos gatilho <span className="normal-case font-normal text-zinc-400">(separados por vírgula)</span></label>
-                      <Input value={(seqEdit.trigger_products||[]).join(", ")} onChange={e=>setSeqEdit({...seqEdit,trigger_products:e.target.value.split(",").map(s=>s.trim()).filter(Boolean)})} placeholder="ex: Chave do Poder, Key to Power"/>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Repetir último step a cada (h)</label>
-                      <Input type="number" min="0" value={seqEdit.repeat_last_every_hours??""} onChange={e=>setSeqEdit({...seqEdit,repeat_last_every_hours:e.target.value?parseInt(e.target.value):null})} placeholder="ex: 72 (0 = não repetir)"/>
-                    </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Nome</label>
+                    <Input value={seqEdit.name||""} onChange={e=>setSeqEdit({...seqEdit,name:e.target.value})} placeholder="Nome da sequência"/>
                   </div>
-
-                  {/* Aviso opt-out */}
-                  <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-50 dark:bg-amber-950/20 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-400">
-                    <span className="mt-0.5 text-base leading-none">⚠</span>
-                    <span>Cada step precisa conter a palavra <b>SAIR</b>, <b>STOP</b> ou <b>SALIR</b> para o opt-out funcionar.</span>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Idioma</label>
+                    <Select value={seqEdit.language||""} onChange={e=>setSeqEdit({...seqEdit,language:e.target.value})} className="w-full">
+                      <option value="pt-BR">🇧🇷 Português (pt-BR)</option>
+                      <option value="en">🇺🇸 English (en)</option>
+                      <option value="es">🇪🇸 Español (es)</option>
+                    </Select>
                   </div>
-
-                  {/* Steps */}
-                  {(seqEdit.steps||[]).map((st,i)=>{
-                    const hasOptOut=/\b(SAIR|STOP|SALIR)\b/i.test(st.text||"");
-                    const chars=(st.text||"").length;
-                    return (
-                      <div key={i} className={cn("rounded-xl border p-4 space-y-3 transition-colors",hasOptOut?"border-zinc-200 dark:border-zinc-800":"border-amber-400/40 dark:border-amber-600/30")}>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Step {i+1}</span>
-                          <div className="flex items-center gap-2">
-                            <span className={cn("text-[10px]",chars<20?"text-red-400":chars>1600?"text-amber-400":"text-zinc-400")}>{chars} chars</span>
-                            {!hasOptOut&&<span className="text-[10px] font-semibold text-amber-500">⚠ falta opt-out</span>}
-                            {(seqEdit.steps||[]).length>1&&(
-                              <button onClick={()=>{const n={...seqEdit,steps:(seqEdit.steps||[]).filter((_,j)=>j!==i)}; setSeqEdit(n);}} className="h-6 w-6 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30 transition-colors text-sm">×</button>
-                            )}
-                          </div>
-                        </div>
-                        <textarea
-                          className="w-full min-h-[140px] resize-y rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 px-3 py-2.5 text-xs leading-relaxed text-zinc-800 dark:text-zinc-200 outline-none focus:border-brand-600/50 focus:ring-2 focus:ring-brand-600/10 transition-all"
-                          value={st.text||""}
-                          onChange={e=>{const n={...seqEdit,steps:[...(seqEdit.steps||[])]}; n.steps[i]={...n.steps[i],text:e.target.value}; setSeqEdit(n);}}
-                          placeholder={`Texto da mensagem ${i+1}…\n\nLembre de incluir: SAIR para cancelar`}
-                        />
-                        <div className="flex items-center gap-2">
-                          <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 whitespace-nowrap">Delay (horas)</label>
-                          <Input
-                            type="number" min="0"
-                            value={st.delay_hours_after??24}
-                            onChange={e=>{const n={...seqEdit,steps:[...(seqEdit.steps||[])]}; n.steps[i]={...n.steps[i],delay_hours_after:parseInt(e.target.value||"24")}; setSeqEdit(n);}}
-                            className="w-28"
-                          />
-                          <span className="text-[11px] text-zinc-400">horas após o step anterior</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {/* Adicionar step */}
-                  <button
-                    onClick={()=>setSeqEdit({...seqEdit,steps:[...(seqEdit.steps||[]),{text:"",delay_hours_after:24}]})}
-                    className="w-full rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 py-2.5 text-sm text-zinc-400 hover:border-brand-600/50 hover:text-brand-600 dark:hover:text-brand-400 transition-all"
-                  >
-                    + Adicionar step
-                  </button>
-
-                  {/* Ações */}
-                  <div className="flex gap-2 pt-1">
-                    <Btn tone="brand" className="flex-1" onClick={saveSequence}>Salvar sequência</Btn>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Produto alvo</label>
+                    <Input value={seqEdit.target_product||""} onChange={e=>setSeqEdit({...seqEdit,target_product:e.target.value})} placeholder="ex: Efeito Camaleão"/>
                   </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Objetivo</label>
+                    <Input value={seqEdit.goal||""} onChange={e=>setSeqEdit({...seqEdit,goal:e.target.value})} placeholder="ex: upsell, onboarding"/>
+                  </div>
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Produtos gatilho <span className="normal-case font-normal text-zinc-400">(vírgula)</span></label>
+                    <Input value={(seqEdit.trigger_products||[]).join(", ")} onChange={e=>setSeqEdit({...seqEdit,trigger_products:e.target.value.split(",").map(s=>s.trim()).filter(Boolean)})} placeholder="ex: Chave do Poder, Key to Power"/>
+                  </div>
+                </div>
+              )}
+
+              {/* Canvas flow */}
+              <FlowEditor seqEdit={seqEdit} setSeqEdit={setSeqEdit}/>
+
+              {/* Save */}
+              {seqEdit&&(
+                <div className="flex items-center gap-3 pt-1">
+                  <Btn tone="brand" className="px-8" onClick={saveSequence}>Salvar sequência</Btn>
+                  <p className="text-[11px] text-zinc-500">{(seqEdit.steps||[]).length} steps · {(seqEdit.steps||[]).filter(s=>/\b(SAIR|STOP|SALIR)\b/i.test(s.text||"")).length} com opt-out</p>
                 </div>
               )}
             </CardC>
