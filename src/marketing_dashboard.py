@@ -1125,15 +1125,35 @@ function Dashboard() {
     finally { setActLoad(false); }
   }
 
+  const SEQ_ERR = {
+    invalid_body:"Corpo da requisição inválido.",
+    sequence_not_found:"Sequência não encontrada no servidor.",
+    invalid_steps:"A sequência precisa ter pelo menos um step.",
+    invalid_language:"Idioma inválido. Use 'pt', 'en' ou 'es'.",
+  };
+  function translateSeqError(msg=""){
+    if(!msg) return "Erro desconhecido ao salvar.";
+    if(SEQ_ERR[msg]) return SEQ_ERR[msg];
+    const m=msg.match(/^missing_opt_out_in_step_(\d+)$/);
+    if(m) return `Step ${Number(m[1])+1}: o texto precisa conter a palavra SAIR, STOP ou SALIR (opt-out obrigatório).`;
+    const e=msg.match(/^empty_step_text_(\d+)$/);
+    if(e) return `Step ${Number(e[1])+1}: o texto não pode estar vazio.`;
+    const d=msg.match(/^invalid_delay_in_step_(\d+)$/);
+    if(d) return `Step ${Number(d[1])+1}: delay inválido — informe um número inteiro de horas.`;
+    const s=msg.match(/^invalid_step_(\d+)$/);
+    if(s) return `Step ${Number(s[1])+1}: estrutura inválida.`;
+    return msg;
+  }
+
   async function saveSequence(){
     if(!seqEditId||!seqEdit) return;
     try{
       const r=await fetch(`${SEQ_API}/${encodeURIComponent(seqEditId)}`,{method:"PUT",headers:adminHeaders({"Content-Type":"application/json"}),body:JSON.stringify(seqEdit)});
       const b=await r.json();
-      if(!r.ok||b.status!=="ok") throw new Error(b.message||`Falha ${r.status}`);
-      toast("Sequência atualizada.","success");
+      if(!r.ok||b.status!=="ok") throw new Error(translateSeqError(b.message||""));
+      toast("Sequência atualizada com sucesso.","success");
       await refresh();
-    }catch(e){toast(e.message||"Erro ao salvar sequência","error");}
+    }catch(e){toast(e.message||"Erro ao salvar sequência.","error");}
   }
 
   async function saveConfig(){
@@ -1348,22 +1368,82 @@ function Dashboard() {
             </Card>
           </div>
           <Card>
-            <CardH><CardT grad>Editor de sequência</CardT><CardD>Edite todos os textos e delays da jornada.</CardD></CardH>
-            <CardC className="space-y-3">
+            <CardH>
+              <div className="flex items-center justify-between gap-2">
+                <div><CardT grad>Editor de sequência</CardT><CardD>Edite textos, delays e steps da jornada.</CardD></div>
+                {seqEdit&&(
+                  <Btn size="sm" tone="ghost" onClick={()=>{const s=sequences.find(x=>x.id===seqEditId); setSeqEdit(s?JSON.parse(JSON.stringify(s)):null); toast("Alterações descartadas.","info");}}>↩ Descartar</Btn>
+                )}
+              </div>
+            </CardH>
+            <CardC className="space-y-4">
+              {/* Seletor de sequência */}
               <Select value={seqEditId} onChange={e=>{const id=e.target.value; setSeqEditId(id); const s=sequences.find(x=>x.id===id); setSeqEdit(s?JSON.parse(JSON.stringify(s)):null);}}>
                 {sequences.map(s=><option key={s.id} value={s.id}>{s.name||s.id}</option>)}
               </Select>
+
               {seqEdit&&(
-                <div className="space-y-3">
-                  <Input value={seqEdit.name||""} onChange={e=>setSeqEdit({...seqEdit,name:e.target.value})} placeholder="Nome da sequência"/>
-                  {(seqEdit.steps||[]).map((st,i)=>(
-                    <div key={i} className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-3 space-y-2">
-                      <div className="text-xs font-semibold">Step {i+1}</div>
-                      <textarea className="w-full min-h-[130px] rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs leading-relaxed text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200" value={st.text||""} onChange={e=>{const n={...seqEdit}; n.steps=[...(n.steps||[])]; n.steps[i]={...n.steps[i],text:e.target.value}; setSeqEdit(n);}}/>
-                      <Input type="number" value={st.delay_hours_after??24} onChange={e=>{const n={...seqEdit}; n.steps=[...(n.steps||[])]; n.steps[i]={...n.steps[i],delay_hours_after:parseInt(e.target.value||"24")}; setSeqEdit(n);}} placeholder="Delay em horas"/>
-                    </div>
-                  ))}
-                  <Btn tone="brand" onClick={saveSequence}>Salvar sequência</Btn>
+                <div className="space-y-4">
+                  {/* Nome */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Nome</label>
+                    <Input value={seqEdit.name||""} onChange={e=>setSeqEdit({...seqEdit,name:e.target.value})} placeholder="Nome da sequência"/>
+                  </div>
+
+                  {/* Aviso opt-out */}
+                  <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-50 dark:bg-amber-950/20 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-400">
+                    <span className="mt-0.5 text-base leading-none">⚠</span>
+                    <span>Cada step precisa conter a palavra <b>SAIR</b>, <b>STOP</b> ou <b>SALIR</b> para o opt-out funcionar.</span>
+                  </div>
+
+                  {/* Steps */}
+                  {(seqEdit.steps||[]).map((st,i)=>{
+                    const hasOptOut=/\b(SAIR|STOP|SALIR)\b/i.test(st.text||"");
+                    const chars=(st.text||"").length;
+                    return (
+                      <div key={i} className={cn("rounded-xl border p-4 space-y-3 transition-colors",hasOptOut?"border-zinc-200 dark:border-zinc-800":"border-amber-400/40 dark:border-amber-600/30")}>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Step {i+1}</span>
+                          <div className="flex items-center gap-2">
+                            <span className={cn("text-[10px]",chars<20?"text-red-400":chars>1600?"text-amber-400":"text-zinc-400")}>{chars} chars</span>
+                            {!hasOptOut&&<span className="text-[10px] font-semibold text-amber-500">⚠ falta opt-out</span>}
+                            {(seqEdit.steps||[]).length>1&&(
+                              <button onClick={()=>{const n={...seqEdit,steps:(seqEdit.steps||[]).filter((_,j)=>j!==i)}; setSeqEdit(n);}} className="h-6 w-6 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30 transition-colors text-sm">×</button>
+                            )}
+                          </div>
+                        </div>
+                        <textarea
+                          className="w-full min-h-[140px] resize-y rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 px-3 py-2.5 text-xs leading-relaxed text-zinc-800 dark:text-zinc-200 outline-none focus:border-brand-600/50 focus:ring-2 focus:ring-brand-600/10 transition-all"
+                          value={st.text||""}
+                          onChange={e=>{const n={...seqEdit,steps:[...(seqEdit.steps||[])]}; n.steps[i]={...n.steps[i],text:e.target.value}; setSeqEdit(n);}}
+                          placeholder={`Texto da mensagem ${i+1}…\n\nLembre de incluir: SAIR para cancelar`}
+                        />
+                        <div className="flex items-center gap-2">
+                          <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 whitespace-nowrap">Delay (horas)</label>
+                          <Input
+                            type="number" min="0"
+                            value={st.delay_hours_after??24}
+                            onChange={e=>{const n={...seqEdit,steps:[...(seqEdit.steps||[])]}; n.steps[i]={...n.steps[i],delay_hours_after:parseInt(e.target.value||"24")}; setSeqEdit(n);}}
+                            className="w-28"
+                          />
+                          <span className="text-[11px] text-zinc-400">horas após o step anterior</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Adicionar step */}
+                  <button
+                    onClick={()=>setSeqEdit({...seqEdit,steps:[...(seqEdit.steps||[]),{text:"",delay_hours_after:24}]})}
+                    className="w-full rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 py-2.5 text-sm text-zinc-400 hover:border-brand-600/50 hover:text-brand-600 dark:hover:text-brand-400 transition-all"
+                  >
+                    + Adicionar step
+                  </button>
+
+                  {/* Ações */}
+                  <div className="flex gap-2 pt-1">
+                    <Btn tone="brand" className="flex-1" onClick={saveSequence}>Salvar sequência</Btn>
+                  </div>
                 </div>
               )}
             </CardC>
