@@ -65,6 +65,9 @@ def render_marketing_dashboard() -> str:
     .toast-in { animation:toastIn 0.3s ease-out both; }
     .toast-out { animation:toastOut 0.25s ease-in both; }
 
+    @keyframes shake { 0%,100%{transform:translateX(0)} 15%,45%,75%{transform:translateX(-7px)} 30%,60%,90%{transform:translateX(7px)} }
+    .shake { animation:shake 0.5s ease-out; }
+
     @keyframes sidebarIn { from{transform:translateX(-100%)} to{transform:translateX(0)} }
     .sidebar-in { animation:sidebarIn 0.25s ease-out both; }
 
@@ -462,7 +465,7 @@ function Controls({query,setQuery,statusFilter,setStatusFilter,customers,showSta
 }
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
-function Sidebar({page,setPage,dark,setDark,open,setOpen,collapsed,setCollapsed}) {
+function Sidebar({page,setPage,dark,setDark,open,setOpen,collapsed,setCollapsed,onLogout}) {
   const inner=(
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 px-5 py-5 border-b border-zinc-200/60 dark:border-zinc-800/60">
@@ -487,9 +490,12 @@ function Sidebar({page,setPage,dark,setDark,open,setOpen,collapsed,setCollapsed}
           <span className="w-5 text-center">{dark?"☀":"☽"}</span>
           <span>{dark?"Tema claro":"Tema escuro"}</span>
         </button>
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/60 p-3 text-[11px] text-zinc-400 leading-relaxed">
-          Visão pública · Ações exigem chave admin.
-        </div>
+        <button onClick={onLogout} className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 transition-all">
+          <span className="w-5 text-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </span>
+          <span>Sair</span>
+        </button>
       </div>
     </div>
   );
@@ -946,6 +952,113 @@ function AnalyticsPage({analytics,dark,loading}) {
   );
 }
 
+// ─── Login Screen ─────────────────────────────────────────────────────────────
+function LoginScreen({onLogin}) {
+  const [pwd,setPwd]       = useState("");
+  const [show,setShow]     = useState(false);
+  const [loading,setLoad]  = useState(false);
+  const [err,setErr]       = useState("");
+  const [shake,setShake]   = useState(false);
+
+  async function attempt() {
+    if (!pwd.trim()) return;
+    setLoad(true); setErr("");
+    try {
+      const r = await fetch(API_URL, {cache:"no-store", headers:{"x-admin-api-key": pwd.trim()}});
+      if (r.status===401||r.status===403) {
+        setErr("Senha incorreta. Tente novamente.");
+        setShake(true);
+        setTimeout(()=>setShake(false), 600);
+        setPwd("");
+      } else if (!r.ok) {
+        setErr(`Erro ${r.status} — verifique se o servidor está rodando.`);
+      } else {
+        onLogin(pwd.trim());
+      }
+    } catch(e) {
+      setErr("Não foi possível conectar ao servidor.");
+    } finally { setLoad(false); }
+  }
+
+  return (
+    <div className="min-h-screen bg-zinc-950 dot-grid flex items-center justify-center p-6 relative overflow-hidden">
+      {/* Glow orbs */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] rounded-full bg-brand-600/8 blur-[80px]"/>
+        <div className="absolute top-1/4 right-1/4 w-[300px] h-[300px] rounded-full bg-sky-500/6 blur-[60px]"/>
+        <div className="absolute bottom-1/4 left-1/4 w-[280px] h-[280px] rounded-full bg-purple-500/5 blur-[60px]"/>
+      </div>
+
+      <div className={cn("w-full max-w-[360px] relative z-10 page-enter", shake&&"shake")}>
+
+        {/* Logo + título */}
+        <div className="flex flex-col items-center mb-8 select-none">
+          <div className="mb-5 h-20 w-20 rounded-2xl overflow-hidden shadow-glow flex items-center justify-center bg-zinc-900 border border-zinc-800">
+            <img src="https://syncronix.co/HEXACRONIX-ADESIVO-300x300.webp" className="h-14 w-14 object-contain" alt=""/>
+          </div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-zinc-50">Marketing Ops</h1>
+          <p className="mt-1 text-sm text-zinc-500">Syncronix · Painel restrito</p>
+        </div>
+
+        {/* Card */}
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/80 backdrop-blur-xl shadow-2xl overflow-hidden">
+          {/* Borda aurora no topo */}
+          <div className="h-0.5 w-full aurora"/>
+          <div className="p-6 space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Senha de acesso</label>
+              <div className="relative">
+                <Input
+                  type={show?"text":"password"}
+                  value={pwd}
+                  onChange={e=>{setPwd(e.target.value);setErr("");}}
+                  onKeyDown={e=>e.key==="Enter"&&attempt()}
+                  placeholder="••••••••••••"
+                  className="pr-10 bg-zinc-950/60 border-zinc-700 text-zinc-100 placeholder:text-zinc-600 focus:border-brand-600/60"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={()=>setShow(!show)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors text-sm"
+                  tabIndex={-1}
+                >
+                  {show?(
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  ):(
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  )}
+                </button>
+              </div>
+              {err&&(
+                <p className="flex items-center gap-1.5 text-xs text-red-400 font-medium">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                  {err}
+                </p>
+              )}
+            </div>
+
+            <Btn
+              tone="brand"
+              className="w-full h-10 text-sm font-semibold"
+              onClick={attempt}
+              disabled={loading||!pwd.trim()}
+            >
+              {loading?(
+                <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 62.8"/></svg> Verificando…</>
+              ):"Entrar →"}
+            </Btn>
+          </div>
+        </div>
+
+        <p className="mt-5 text-center text-[11px] text-zinc-700">
+          Sessão salva localmente · Chave <span className="font-mono">x-admin-api-key</span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ─── Dashboard root ───────────────────────────────────────────────────────────
 function Dashboard() {
   const [data,setData]        = useState(null);
@@ -1250,7 +1363,7 @@ function Dashboard() {
                       <Input type="number" value={st.delay_hours_after??24} onChange={e=>{const n={...seqEdit}; n.steps=[...(n.steps||[])]; n.steps[i]={...n.steps[i],delay_hours_after:parseInt(e.target.value||"24")}; setSeqEdit(n);}} placeholder="Delay em horas"/>
                     </div>
                   ))}
-                  <Button onClick={saveSequence}>Salvar sequência</Button>
+                  <Btn tone="brand" onClick={saveSequence}>Salvar sequência</Btn>
                 </div>
               )}
             </CardC>
@@ -1331,7 +1444,7 @@ function Dashboard() {
                   <label className="flex items-center gap-2"><input type="checkbox" checked={!!(cfgEdit&&cfgEdit.CLOSER_ENABLED)} onChange={e=>setCfgEdit({...cfgEdit,CLOSER_ENABLED:e.target.checked})}/>Closer</label>
                   <label className="flex items-center gap-2"><input type="checkbox" checked={!!(cfgEdit&&cfgEdit.TYPING_ENABLED)} onChange={e=>setCfgEdit({...cfgEdit,TYPING_ENABLED:e.target.checked})}/>Typing</label>
                 </div>
-                <Button onClick={saveConfig}>Salvar configurações</Button>
+                <Btn tone="brand" onClick={saveConfig}>Salvar configurações</Btn>
               </CardC>
             </Card>
           </div>
@@ -1343,22 +1456,12 @@ function Dashboard() {
   }
 
   if(!adminKey.trim()){
-    return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <Card className="w-full max-w-md">
-          <CardH><CardT grad>Acesso restrito</CardT><CardD>Informe a senha para entrar na interface.</CardD></CardH>
-          <CardC className="space-y-3">
-            <Input type="password" value={adminKey} onChange={e=>setAdminKey(e.target.value)} placeholder="Senha admin"/>
-            <Button onClick={()=>{localStorage.setItem("mk_admin",adminKey); refresh({initial:true});}}>Entrar</Button>
-          </CardC>
-        </Card>
-      </div>
-    );
+    return <LoginScreen onLogin={key=>{setAdminKey(key); localStorage.setItem("mk_admin",key);}}/>;
   }
 
   return (
     <div className="min-h-screen">
-      <Sidebar page={page} setPage={setPage} dark={dark} setDark={setDark} open={mobileOpen} setOpen={setMOpen} collapsed={sidebarCollapsed} setCollapsed={setCollapsed}/>
+      <Sidebar page={page} setPage={setPage} dark={dark} setDark={setDark} open={mobileOpen} setOpen={setMOpen} collapsed={sidebarCollapsed} setCollapsed={setCollapsed} onLogout={()=>{localStorage.removeItem("mk_admin");setAdminKey("");setData(null);setLastGood(null);}}/>
       {/* Botão flutuante para expandir sidebar (desktop, só quando colapsado) */}
       {sidebarCollapsed&&(
         <button onClick={()=>setCollapsed(false)} title="Expandir menu" className="hidden lg:flex fixed top-3 left-3 z-40 h-12 w-12 items-center justify-center rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform bg-zinc-900 border border-zinc-800">
